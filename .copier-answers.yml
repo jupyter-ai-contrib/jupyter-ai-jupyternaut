@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.4.0
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: jupyter@googlegroups.com
+author_name: Project Jupyter
+has_binder: false
+has_settings: false
+kind: frontend-and-server
+labextension_name: '@jupyter-ai/jupyternaut'
+project_short_description: Package providing the default AI persona, Jupyternaut,
+    in Jupyter AI.
+python_name: jupyter_ai_jupyternaut
+repository: https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut
+test: true
+
