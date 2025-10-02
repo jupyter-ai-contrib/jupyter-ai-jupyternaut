@@ -237,13 +237,16 @@ export function ModelParametersInput(
     }
 
     // Creates JSON object of parameters with type and value structure
-    const paramsObject = parameters.reduce((acc, param) => {
-      acc[param.name] = {
-        value: param.value,
-        type: param.type
-      };
-      return acc;
-    }, {} as Record<string, { value: string; type: string }>);
+    const paramsObject = parameters.reduce(
+      (acc, param) => {
+        acc[param.name] = {
+          value: param.value,
+          type: param.type
+        };
+        return acc;
+      },
+      {} as Record<string, { value: string; type: string }>
+    );
 
     try {
       await AiService.saveModelParameters(props.modelId, paramsObject);

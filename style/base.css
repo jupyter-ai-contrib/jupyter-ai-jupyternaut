@@ -4,4 +4,4 @@
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
 
-@import './chat-settings.css';
+@import url('./chat-settings.css');

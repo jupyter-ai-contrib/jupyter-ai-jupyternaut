@@ -95,8 +95,8 @@ export class JaiInlineProvider
       streamPreference === 'always'
         ? true
         : streamPreference === 'never'
-        ? false
-        : context.triggerKind === InlineCompletionTriggerKind.Invoke;
+          ? false
+          : context.triggerKind === InlineCompletionTriggerKind.Invoke;
 
     if (stream) {
       // Reset stream promises handler
