@@ -1,5 +1,9 @@
 [build-system]
-requires = ["hatchling>=1.5.0", "jupyterlab>=4.0.0,<5", "hatch-nodejs-version>=0.3.2"]
+requires = [
+    "hatchling>=1.5.0",
+    "jupyterlab>=4.0.0,<5",
+    "hatch-nodejs-version>=0.3.2",
+]
 build-backend = "hatchling.build"
 
 [project]
@@ -23,7 +27,21 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "jupyter_server>=2.4.0,<3"
+    # `jupyter_collaboration>=4` requires `jupyter_server_ydoc>=2.0.0`,
+    # which requires `jupyter_server>=2.15.0`.
+    "jupyter_server>=2.15.0,<3",
+    # pydantic <2.10.0 raises a "protected namespaces" error in JAI
+    # - See: https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.protected_namespaces
+    "pydantic>=2.10.0,<3",
+    # traitlets>=5.6 is required in JL4
+    "traitlets>=5.6",
+    "deepmerge>=2.0,<3",
+    # NOTE: Make sure to update the corresponding dependency in
+    # `packages/jupyter-ai/package.json` to match the version range below
+    "jupyterlab-chat>=0.17.0,<0.18.0",
+    "litellm>=1.73,<2",
+    "jinja2>=3.0,<4",
+    "python_dotenv>=1,<2",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
@@ -33,7 +51,7 @@ test = [
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
-    "pytest-jupyter[server]>=0.6.0"
+    "pytest-jupyter[server]>=0.6.0",
 ]
 
 [tool.hatch.version]
@@ -80,7 +98,7 @@ version_cmd = "hatch version"
 before-build-npm = [
     "python -m pip install 'jupyterlab>=4.0.0,<5'",
     "jlpm",
-    "jlpm build:prod"
+    "jlpm build:prod",
 ]
 before-build-python = ["jlpm clean:all"]
 
