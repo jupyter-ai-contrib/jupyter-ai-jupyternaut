@@ -1,7 +1,6 @@
 import json
 
 from jupyter_server.base.handlers import APIHandler
-from jupyter_server.utils import url_path_join
 import tornado
 
 class RouteHandler(APIHandler):
@@ -14,11 +13,3 @@ class RouteHandler(APIHandler):
             "data": "This is /jupyter-ai-jupyternaut/get-example endpoint!"
         }))
 
-
-def setup_handlers(web_app):
-    host_pattern = ".*$"
-
-    base_url = web_app.settings["base_url"]
-    route_pattern = url_path_join(base_url, "api/jupyternaut", "get-example")
-    handlers = [(route_pattern, RouteHandler)]
-    web_app.add_handlers(host_pattern, handlers)
