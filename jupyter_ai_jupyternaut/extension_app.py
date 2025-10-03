@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from .config import ConfigManager, ConfigRestAPI
 from .handlers import RouteHandler
+from .jupyternaut import JupyternautPersona
 from .models import ChatModelsRestAPI, ModelParametersRestAPI
 from .secrets import EnvSecretsManager, SecretsRestAPI
 
@@ -176,7 +177,7 @@ class JupyternautExtension(ExtensionApp):
         }
 
         # Initialize ConfigManager
-        self.settings["jupyternaut.config_manager"] = ConfigManager(
+        config_manager = ConfigManager(
             config=self.config,
             log=self.log,
             allowed_providers=self.allowed_providers,
@@ -185,8 +186,14 @@ class JupyternautExtension(ExtensionApp):
             blocked_models=self.blocked_models,
             defaults=defaults,
         )
+        
+        # Bind ConfigManager instance to global settings dictionary
+        self.settings["jupyternaut.config_manager"] = config_manager
 
-        # Initialize SecretsManager
+        # Bind ConfigManager instance to Jupyternaut as a class variable
+        JupyternautPersona.config_manager = config_manager
+
+        # Initialize SecretsManager and bind it to global settings dictionary
         self.settings["jupyternaut.secrets_manager"] = EnvSecretsManager(parent=self)
     
     def _link_jupyter_server_extension(self, server_app: ServerApp):
