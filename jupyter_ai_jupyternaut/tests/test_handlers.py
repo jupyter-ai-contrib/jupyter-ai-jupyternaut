@@ -3,11 +3,11 @@ import json
 
 async def test_get_example(jp_fetch):
     # When
-    response = await jp_fetch("jupyter-ai-jupyternaut", "get-example")
+    response = await jp_fetch("api/jupyternaut/get-example")
 
     # Then
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
-        "data": "This is /jupyter-ai-jupyternaut/get-example endpoint!"
+        "data": "This is /api/jupyternaut/get-example endpoint!"
     }
