@@ -23,7 +23,7 @@ class JupyternautPersona(BasePersona):
     def defaults(self):
         return PersonaDefaults(
             name="Jupyternaut",
-            avatar_path="/api/ai/static/jupyternaut.svg",
+            avatar_path="/api/jupyternaut/static/jupyternaut.svg",
             description="The standard agent provided by JupyterLab. Currently has no tools.",
             system_prompt="...",
         )
