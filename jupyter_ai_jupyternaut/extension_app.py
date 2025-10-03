@@ -3,6 +3,7 @@ from asyncio import get_event_loop_policy
 from jupyter_server.extension.application import ExtensionApp
 from jupyter_server.serverapp import ServerApp
 from traitlets import List, Unicode, Dict
+from traitlets.config import Config
 from typing import TYPE_CHECKING
 
 from .config import ConfigManager, ConfigRestAPI
@@ -187,5 +188,26 @@ class JupyternautExtension(ExtensionApp):
 
         # Initialize SecretsManager
         self.settings["jupyternaut.secrets_manager"] = EnvSecretsManager(parent=self)
-
+    
+    def _link_jupyter_server_extension(self, server_app: ServerApp):
+        """Setup custom config needed by this extension."""
+        c = Config()
+        c.ContentsManager.allow_hidden = True
+        c.ContentsManager.hide_globs = [
+            "__pycache__",  # Python bytecode cache directories
+            "*.pyc",  # Compiled Python files
+            "*.pyo",  # Optimized Python files
+            ".DS_Store",  # macOS system files
+            "*~",  # Editor backup files
+            ".ipynb_checkpoints",  # Jupyter notebook checkpoint files
+            ".git",  # Git version control directory
+            ".venv",  # Python virtual environment directory
+            "venv",  # Python virtual environment directory
+            "node_modules",  # Node.js dependencies directory
+            ".pytest_cache",  # PyTest cache directory
+            ".mypy_cache",  # MyPy type checker cache directory
+            "*.egg-info",  # Python package metadata directories
+        ]
+        server_app.update_config(c)
+        super()._link_jupyter_server_extension(server_app)
 

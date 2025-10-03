@@ -1,4 +1,4 @@
-from jupyter_ai.secrets.secrets_utils import build_updated_dotenv, get_whitespace_around
+from ..secrets_utils import build_updated_dotenv, get_whitespace_around
 
 
 class TestGetWhitespaceAround:

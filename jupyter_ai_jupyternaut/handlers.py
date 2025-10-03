@@ -10,6 +10,6 @@ class RouteHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
         self.finish(json.dumps({
-            "data": "This is /jupyter-ai-jupyternaut/get-example endpoint!"
+            "data": "This is /api/jupyternaut/get-example endpoint!"
         }))
 

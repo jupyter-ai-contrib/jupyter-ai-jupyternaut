@@ -5,12 +5,11 @@ Unit tests for the `..secrets_manager` module.
 from __future__ import annotations
 import asyncio
 import pytest
-from unittest.mock import AsyncMock, Mock, patch
 from typing import TYPE_CHECKING
 import os
 
-from jupyter_ai.secrets.secrets_manager import EnvSecretsManager
-from jupyter_ai.secrets.secrets_types import SecretsList
+from ..secrets_manager import EnvSecretsManager
+from ..secrets_types import SecretsList
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,13 +25,13 @@ def dotenv_path(tmp_path):
 
 
 @pytest.fixture
-def manager(mock_ai_extension, dotenv_path):
+def manager(mock_extension, dotenv_path):
     """
     Returns the configured `EnvSecretsManager` instance to be tested in this
     file.
     """
     # Yield configured `EnvSecretsManager`
-    manager = EnvSecretsManager(parent=mock_ai_extension)
+    manager = EnvSecretsManager(parent=mock_extension)
     yield manager
 
     # Cleanup
