@@ -41,6 +41,7 @@ dependencies = [
     "litellm>=1.73,<2",
     "jinja2>=3.0,<4",
     "python_dotenv>=1,<2",
+    "jupyter_ai_persona_manager>=0.0.1",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
@@ -103,3 +104,13 @@ before-build-python = ["jlpm clean:all"]
 
 [tool.check-wheel-contents]
 ignore = ["W002"]
+
+###############################################################################
+# Provide Jupyternaut on the personas entry point to `jupyter_ai_persona_manager`.
+# This adds Jupyternaut to JupyterLab.
+# See: https://jupyter-ai.readthedocs.io/en/v3/developers/entry_points_api/personas_group.html
+# See also: https://packaging.python.org/en/latest/specifications/entry-points/
+
+[project.entry-points."jupyter_ai.personas"]
+jupyternaut = "jupyter_ai_jupyternaut.jupyternaut.jupyternaut:JupyternautPersona"
+###############################################################################
