@@ -126,3 +126,10 @@ dmypy.json
 
 # For local testing
 playground/
+
+# Ignore secrets in '.env'
+.env
+
+# Ignore chat files & jupyter_ystore
+.jupyter_ystore.db
+**/*.chat
