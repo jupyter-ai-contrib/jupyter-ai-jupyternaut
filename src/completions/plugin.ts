@@ -72,7 +72,7 @@ export const completionPlugin: JupyterFrontEndPlugin<JaiCompletionToken> = {
       );
       return null;
     }
-    
+
     const completionHandler = new CompletionWebsocketHandler();
     const provider = new JaiInlineProvider({
       completionHandler,
