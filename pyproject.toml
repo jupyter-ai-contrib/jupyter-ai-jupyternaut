@@ -41,6 +41,7 @@ dependencies = [
     "litellm>=1.73,<2",
     "jinja2>=3.0,<4",
     "python_dotenv>=1,<2",
+    "jupyter_ai_persona_manager>=0.0.1",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 

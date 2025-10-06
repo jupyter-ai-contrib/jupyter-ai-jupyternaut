@@ -3,8 +3,8 @@ from typing import Any, Optional
 from jupyterlab_chat.models import Message
 from litellm import acompletion
 
-from ..base_persona import BasePersona, PersonaDefaults
-from ..persona_manager import SYSTEM_USERNAME
+from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
+from jupyter_ai_persona_manager.persona_manager import SYSTEM_USERNAME
 from .prompt_template import (
     JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE,
     JupyternautSystemPromptArgs,

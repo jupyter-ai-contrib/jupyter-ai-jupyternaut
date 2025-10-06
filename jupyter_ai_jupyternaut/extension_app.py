@@ -1,11 +1,9 @@
 from __future__ import annotations
 from asyncio import get_event_loop_policy
 from jupyter_server.extension.application import ExtensionApp
-from jupyter_server.serverapp import ServerApp
 import os
 from tornado.web import StaticFileHandler
 from traitlets import List, Unicode, Dict
-from traitlets.config import Config
 from typing import TYPE_CHECKING
 
 from .config import ConfigManager, ConfigRestAPI
@@ -21,10 +19,11 @@ JUPYTERNAUT_AVATAR_PATH = str(
     os.path.join(os.path.dirname(__file__), "static", "jupyternaut.svg")
 )
 
+
 class JupyternautExtension(ExtensionApp):
     """
     The Jupyternaut server extension.
-    
+
     This serves several REST APIs under the `/api/jupyternaut` route. Currently,
     for the sake of simplicity, they are hard-coded into the Jupyternaut server
     extension to allow users to configure the chat model & add API keys.
@@ -197,7 +196,7 @@ class JupyternautExtension(ExtensionApp):
             blocked_models=self.blocked_models,
             defaults=defaults,
         )
-        
+
         # Bind ConfigManager instance to global settings dictionary
         self.settings["jupyternaut.config_manager"] = config_manager
 
@@ -206,26 +205,3 @@ class JupyternautExtension(ExtensionApp):
 
         # Initialize SecretsManager and bind it to global settings dictionary
         self.settings["jupyternaut.secrets_manager"] = EnvSecretsManager(parent=self)
-    
-    def _link_jupyter_server_extension(self, server_app: ServerApp):
-        """Setup custom config needed by this extension."""
-        c = Config()
-        c.ContentsManager.allow_hidden = True
-        c.ContentsManager.hide_globs = [
-            "__pycache__",  # Python bytecode cache directories
-            "*.pyc",  # Compiled Python files
-            "*.pyo",  # Optimized Python files
-            ".DS_Store",  # macOS system files
-            "*~",  # Editor backup files
-            ".ipynb_checkpoints",  # Jupyter notebook checkpoint files
-            ".git",  # Git version control directory
-            ".venv",  # Python virtual environment directory
-            "venv",  # Python virtual environment directory
-            "node_modules",  # Node.js dependencies directory
-            ".pytest_cache",  # PyTest cache directory
-            ".mypy_cache",  # MyPy type checker cache directory
-            "*.egg-info",  # Python package metadata directories
-        ]
-        server_app.update_config(c)
-        super()._link_jupyter_server_extension(server_app)
-

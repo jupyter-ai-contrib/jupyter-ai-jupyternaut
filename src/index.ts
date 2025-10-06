@@ -16,7 +16,7 @@ import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { SingletonLayout, Widget } from '@lumino/widgets';
 
 import { StopButton } from './components/message-footer/stop-button';
-import { completionPlugin } from './completions';
+//import { completionPlugin } from './completions';
 import { buildErrorWidget } from './widgets/chat-error';
 import { buildAiSettings } from './widgets/settings-widget';
 import { statusItemPlugin } from './status';
@@ -145,6 +145,6 @@ export default [
   jupyternautSettingsPlugin,
   // webComponentsPlugin,
   stopButtonPlugin,
-  completionPlugin,
+  // completionPlugin,
   statusItemPlugin
 ];
