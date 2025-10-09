@@ -9,15 +9,17 @@ const API_NAMESPACE = 'api/jupyternaut';
  *
  * @param endPoint API REST end point for the extension
  * @param init Initial values for the request
+ * @param api_namespace Optional API namespace (defaults to API_NAMESPACE)
  * @returns The response body interpreted as JSON
  */
 export async function requestAPI<T>(
   endPoint = '',
-  init: RequestInit = {}
+  init: RequestInit = {},
+  api_namespace: string = API_NAMESPACE
 ): Promise<T> {
   // Make request to Jupyter API
   const settings = ServerConnection.makeSettings();
-  const requestUrl = URLExt.join(settings.baseUrl, API_NAMESPACE, endPoint);
+  const requestUrl = URLExt.join(settings.baseUrl, api_namespace, endPoint);
 
   let response: Response;
   try {
@@ -169,7 +171,7 @@ export namespace AiService {
   export async function listChatModels(): Promise<string[]> {
     const response = await requestAPI<ListChatModelsResponse>('models/chat/', {
       method: 'GET'
-    });
+    }, 'api/ai');
     return response.chat_models;
   }
 
