@@ -43,7 +43,7 @@ export function StopButton(props: MessageFooterSectionProps): JSX.Element {
 
   const onClick = () => {
     // Post request to the stop streaming handler.
-    requestAPI('chats/stop_streaming', {
+    requestAPI('api/jupyternaut/chats/stop_streaming', {
       method: 'POST',
       body: JSON.stringify({
         message_id: message.id

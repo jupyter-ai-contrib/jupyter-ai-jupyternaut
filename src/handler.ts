@@ -2,12 +2,10 @@ import { URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-const API_NAMESPACE = 'api/jupyternaut';
-
 /**
  * Call the API extension
  *
- * @param endPoint API REST end point for the extension
+ * @param endPoint Full API REST end point path for the extension
  * @param init Initial values for the request
  * @returns The response body interpreted as JSON
  */
@@ -17,7 +15,7 @@ export async function requestAPI<T>(
 ): Promise<T> {
   // Make request to Jupyter API
   const settings = ServerConnection.makeSettings();
-  const requestUrl = URLExt.join(settings.baseUrl, API_NAMESPACE, endPoint);
+  const requestUrl = URLExt.join(settings.baseUrl, endPoint);
 
   let response: Response;
   try {
@@ -76,7 +74,7 @@ export namespace AiService {
   };
 
   export async function getConfig(): Promise<DescribeConfigResponse> {
-    return requestAPI<DescribeConfigResponse>('config');
+    return requestAPI<DescribeConfigResponse>('api/jupyternaut/config');
   }
 
   export type EnvAuthStrategy = {
@@ -120,17 +118,19 @@ export namespace AiService {
   };
 
   export async function listLmProviders(): Promise<ListProvidersResponse> {
-    return requestAPI<ListProvidersResponse>('providers');
+    return requestAPI<ListProvidersResponse>('api/jupyternaut/providers');
   }
 
   export async function listEmProviders(): Promise<ListProvidersResponse> {
-    return requestAPI<ListProvidersResponse>('providers/embeddings');
+    return requestAPI<ListProvidersResponse>(
+      'api/jupyternaut/providers/embeddings'
+    );
   }
 
   export async function updateConfig(
     config: UpdateConfigRequest
   ): Promise<void> {
-    return requestAPI<void>('config', {
+    return requestAPI<void>('api/jupyternaut/config', {
       method: 'POST',
       body: JSON.stringify(config)
     });
@@ -142,7 +142,7 @@ export namespace AiService {
   };
 
   export async function listSecrets(): Promise<SecretsList> {
-    return requestAPI<SecretsList>('secrets/', {
+    return requestAPI<SecretsList>('api/jupyternaut/secrets/', {
       method: 'GET'
     });
   }
@@ -154,7 +154,7 @@ export namespace AiService {
   export async function updateSecrets(
     updatedSecrets: Record<string, string | null>
   ): Promise<void> {
-    return requestAPI<void>('secrets/', {
+    return requestAPI<void>('api/jupyternaut/secrets/', {
       method: 'PUT',
       body: JSON.stringify({
         updated_secrets: updatedSecrets
@@ -167,14 +167,19 @@ export namespace AiService {
   }
 
   export async function listChatModels(): Promise<string[]> {
-    const response = await requestAPI<ListChatModelsResponse>('models/chat/', {
-      method: 'GET'
-    });
+    const response = await requestAPI<ListChatModelsResponse>(
+      'api/ai/models/chat/',
+      {
+        method: 'GET'
+      }
+    );
     return response.chat_models;
   }
 
   export async function getChatModel(): Promise<string | null> {
-    const response = await requestAPI<DescribeConfigResponse>('config/');
+    const response = await requestAPI<DescribeConfigResponse>(
+      'api/jupyternaut/config/'
+    );
     return response.model_provider_id;
   }
 
@@ -185,7 +190,9 @@ export namespace AiService {
   }
 
   export async function getCompletionModel(): Promise<string | null> {
-    const response = await requestAPI<DescribeConfigResponse>('config/');
+    const response = await requestAPI<DescribeConfigResponse>(
+      'api/jupyternaut/config/'
+    );
     return response.completions_model_provider_id;
   }
 
@@ -228,22 +235,27 @@ export namespace AiService {
     const endpoint = `model-parameters${
       params.toString() ? `?${params.toString()}` : ''
     }`;
-    return await requestAPI<GetModelParametersResponse>(endpoint);
+    return await requestAPI<GetModelParametersResponse>(
+      `api/jupyternaut/${endpoint}`
+    );
   }
 
   export async function saveModelParameters(
     modelId: string,
     parameters: Record<string, any>
   ): Promise<UpdateModelParametersResponse> {
-    return await requestAPI<UpdateModelParametersResponse>('model-parameters', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model_id: modelId,
-        parameters: parameters
-      })
-    });
+    return await requestAPI<UpdateModelParametersResponse>(
+      'api/jupyternaut/model-parameters',
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model_id: modelId,
+          parameters: parameters
+        })
+      }
+    );
   }
 }

@@ -42,7 +42,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd) => {
     console.log('JupyterLab extension @jupyter-ai/jupyternaut is activated!');
 
-    requestAPI<any>('get-example')
+    requestAPI<any>('api/jupyternaut/get-example')
       .then(data => {
         console.log(data);
       })
