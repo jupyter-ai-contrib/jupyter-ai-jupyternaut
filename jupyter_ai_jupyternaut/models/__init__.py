@@ -1,3 +1,1 @@
-from .model_list import CHAT_MODELS, EMBEDDING_MODELS
-from .chat_models_rest_api import ChatModelsRestAPI
 from .parameters_rest_api import ModelParametersRestAPI

@@ -13,6 +13,7 @@ This is **jupyter_ai_jupyternaut**, a JupyterLab extension that provides the def
 ## Development Commands
 
 ### Setup
+
 ```bash
 micromamba install uv jupyterlab nodejs=22
 jlpm
@@ -20,27 +21,32 @@ jlpm dev:install
 ```
 
 ### Build Commands
+
 - `jlpm build` - Build TypeScript sources with source maps
 - `jlpm build:prod` - Production build (clean + lib + labextension)
 - `jlpm build:lib` - Build TypeScript library only
 - `jlpm build:labextension` - Build JupyterLab extension
 
 ### Development
+
 - `jlpm watch` - Watch source files and auto-rebuild
 - `jlpm dev:install` - Full development installation
 - `jlpm dev:uninstall` - Remove development installation
 
 ### Testing
+
 - **Frontend**: `jlpm test` (Jest)
 - **Backend**: `pytest -vv -r ap --cov jupyter_ai_jupyternaut`
 - **UI Tests**: See `ui-tests/README.md` (Playwright/Galata)
 
 ### Code Quality
+
 - `jlpm lint` - Run all linters (stylelint + prettier + eslint)
 - `jlpm lint:check` - Check without fixing
 - Individual tools: `jlpm eslint`, `jlpm prettier`, `jlpm stylelint`
 
 ### Clean Commands
+
 - `jlpm clean` - Clean lib directory
 - `jlpm clean:all` - Clean everything including labextension
 
@@ -71,6 +77,7 @@ jlpm dev:install
 - **Frontend**: `@jupyter/chat`, `@mui/material`, `@emotion/react`, JupyterLab 4.x
 
 ### File Structure
+
 - `jupyter_ai_jupyternaut/` - Python package (server extension)
   - `jupyternaut/` - Core persona implementation
   - `config/` - Configuration management
@@ -89,6 +96,7 @@ jlpm dev:install
 - Entry point registration allows automatic persona discovery by Jupyter AI
 
 ### Code Style
+
 - TypeScript: ESLint with Prettier, single quotes, no trailing commas
 - Python: Standard formatting (details in pyproject.toml)
 - Interface naming: Must start with `I` and use PascalCase
