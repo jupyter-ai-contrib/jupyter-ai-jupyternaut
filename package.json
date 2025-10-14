@@ -1,6 +1,6 @@
 {
     "name": "@jupyter-ai/jupyternaut",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Package providing the default AI persona, Jupyternaut, in Jupyter AI.",
     "keywords": [
         "jupyter",
