@@ -15,6 +15,11 @@ from .prompt_template import (
     JupyternautSystemPromptArgs,
 )
 
+from .toolkits.code_execution import toolkit as exec_toolkit
+from .toolkits.filesystem import toolkit as fs_toolkit
+from .toolkits.notebook import toolkit as nb_toolkit
+
+
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 
@@ -40,11 +45,23 @@ class JupyternautPersona(BasePersona):
             conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
             self._memory_store = AsyncSqliteSaver(conn)        
         return self._memory_store
+    
+    def get_tools(self):
+        tools = []
+        tools += nb_toolkit
+        tools += fs_toolkit
 
-    async def _create_agent(self, model_id: str, model_args, system_prompt: str):
+        return tools
+
+    async def get_agent(self, model_id: str, model_args, system_prompt: str):
         model = ChatLiteLLM(**model_args, model_id=model_id, streaming=True)
         memory_store = await self.get_memory_store()
-        return create_agent(model, system_prompt=system_prompt, checkpointer=memory_store)
+        return create_agent(
+            model, 
+            system_prompt=system_prompt, 
+            checkpointer=memory_store,
+            tools=self.get_tools()
+        )
 
     async def process_message(self, message: Message) -> None:
         if not hasattr(self, "config_manager"):
@@ -62,7 +79,7 @@ class JupyternautPersona(BasePersona):
         model_id = self.config_manager.chat_model
         model_args = self.config_manager.chat_model_args
         system_prompt = self.get_system_prompt(model_id=model_id, message=message)
-        agent = await self._create_agent(
+        agent = await self.get_agent(
             model_id=model_id, 
             model_args=model_args, 
             system_prompt=system_prompt

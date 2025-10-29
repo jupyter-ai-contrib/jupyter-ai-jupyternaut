@@ -44,7 +44,8 @@ dependencies = [
     "jupyter_ai_persona_manager>=0.0.1",
     "langchain>=1.0.0",
     "langgraph-checkpoint-sqlite>=3.0.0",
-    "aiosqlite"
+    "aiosqlite",
+    "jupyter_server_documents>=0.1.a8"
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
