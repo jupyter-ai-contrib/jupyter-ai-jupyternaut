@@ -1,14 +1,21 @@
+import os
+import aiosqlite
 from typing import Any, Optional
-
-from jupyterlab_chat.models import Message
-from litellm import acompletion
 
 from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_ai_persona_manager.persona_manager import SYSTEM_USERNAME
+from jupyter_core.paths import jupyter_data_dir
+from jupyterlab_chat.models import Message
+from langchain.agents import create_agent
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+from .chat_models import ChatLiteLLM
 from .prompt_template import (
     JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE,
     JupyternautSystemPromptArgs,
 )
+
+MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 
 class JupyternautPersona(BasePersona):
@@ -28,11 +35,22 @@ class JupyternautPersona(BasePersona):
             system_prompt="...",
         )
 
+    async def get_memory_store(self):
+        if not hasattr(self, "_memory_store"):
+            conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
+            self._memory_store = AsyncSqliteSaver(conn)        
+        return self._memory_store
+
+    async def _create_agent(self, model_id: str, model_args, system_prompt: str):
+        model = ChatLiteLLM(**model_args, model_id=model_id, streaming=True)
+        memory_store = await self.get_memory_store()
+        return create_agent(model, system_prompt=system_prompt, checkpointer=memory_store)
+
     async def process_message(self, message: Message) -> None:
-        if not hasattr(self, 'config_manager'):
+        if not hasattr(self, "config_manager"):
             self.send_message(
                 "Jupyternaut requires the `jupyter_ai_jupyternaut` server extension package.\n\n",
-                "Please make sure to first install that package in your environment & restart the server."
+                "Please make sure to first install that package in your environment & restart the server.",
             )
         if not self.config_manager.chat_model:
             self.send_message(
@@ -43,28 +61,30 @@ class JupyternautPersona(BasePersona):
 
         model_id = self.config_manager.chat_model
         model_args = self.config_manager.chat_model_args
-        context_as_messages = self.get_context_as_messages(model_id, message)
-        response_aiter = await acompletion(
-            **model_args,
-            model=model_id,
-            messages=[
-                *context_as_messages,
-                {
-                    "role": "user",
-                    "content": message.body,
-                },
-            ],
-            stream=True,
+        system_prompt = self.get_system_prompt(model_id=model_id, message=message)
+        agent = await self._create_agent(
+            model_id=model_id, 
+            model_args=model_args, 
+            system_prompt=system_prompt
         )
 
+        async def create_aiter():
+            async for chunk, metadata in agent.astream(
+                {"messages": [{"role": "user", "content": message.body}]},
+                {"configurable": {"thread_id": self.ychat.get_id()}},
+                stream_mode="messages",
+            ):
+                if chunk.content:
+                    yield chunk.content
+
+        response_aiter = create_aiter()
         await self.stream_message(response_aiter)
 
-    def get_context_as_messages(
+    def get_system_prompt(
         self, model_id: str, message: Message
     ) -> list[dict[str, Any]]:
         """
-        Returns the current context, including attachments and recent messages,
-        as a list of messages accepted by `litellm.acompletion()`.
+        Returns the system prompt, including attachments as a string.
         """
         system_msg_args = JupyternautSystemPromptArgs(
             model_id=model_id,
@@ -72,36 +92,9 @@ class JupyternautPersona(BasePersona):
             context=self.process_attachments(message),
         ).model_dump()
 
-        system_msg = {
-            "role": "system",
-            "content": JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args),
-        }
+        return JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args)
 
-        context_as_messages = [system_msg, *self._get_history_as_messages()]
-        return context_as_messages
-
-    def _get_history_as_messages(self, k: Optional[int] = 2) -> list[dict[str, Any]]:
-        """
-        Returns the current history as a list of messages accepted by
-        `litellm.acompletion()`.
-        """
-        # TODO: consider bounding history based on message size (e.g. total
-        # char/token count) instead of message count.
-        all_messages = self.ychat.get_messages()
-
-        # gather last k * 2 messages and return
-        # we exclude the last message since that is the human message just
-        # submitted by a user.
-        start_idx = 0 if k is None else -2 * k - 1
-        recent_messages: list[Message] = all_messages[start_idx:-1]
-
-        history: list[dict[str, Any]] = []
-        for msg in recent_messages:
-            role = (
-                "assistant"
-                if msg.sender.startswith("jupyter-ai-personas::")
-                else "system" if msg.sender == SYSTEM_USERNAME else "user"
-            )
-            history.append({"role": role, "content": msg.body})
-
-        return history
+    def shutdown(self):
+        if self._memory_store:
+            self.parent.event_loop.create_task(self._memory_store.conn.close())
+        super().shutdown()
