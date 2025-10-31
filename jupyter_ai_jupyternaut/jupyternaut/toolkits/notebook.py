@@ -803,10 +803,7 @@ def _safe_set_cursor(
 async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
     """Edits the content of a notebook cell with the specified ID
 
-    This function modifies the content of a cell in a Jupyter notebook. It first attempts to use
-    the in-memory YDoc representation if the notebook is currently active. If the
-    notebook is not active, it falls back to using the filesystem to read, modify,
-    and write the notebook file directly using nbformat.
+    This function modifies the content of a cell in a Jupyter notebook.
 
     Args:
         file_path:
