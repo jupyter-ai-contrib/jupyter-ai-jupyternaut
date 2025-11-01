@@ -6,7 +6,7 @@ from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware
+from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.messages import ToolMessage
