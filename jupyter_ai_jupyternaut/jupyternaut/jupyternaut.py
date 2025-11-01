@@ -6,7 +6,7 @@ from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentMiddleware, wrap_tool_call
+from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.messages import ToolMessage
@@ -21,37 +21,76 @@ from .prompt_template import (
     JupyternautSystemPromptArgs,
 )
 from .toolkits.notebook import toolkit as nb_toolkit
+from .toolkits.jupyterlab import toolkit as jlab_toolkit
 
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 
+def format_tool_args_compact(args_dict, threshold=25):
+    """
+    Create a more compact string representation of tool call args.
+    Each key-value pair is on its own line for better readability.
+
+    Args:
+        args_dict (dict): Dictionary of tool arguments
+        threshold (int): Maximum number of lines before truncation (default: 25)
+
+    Returns:
+        str: Formatted string representation of arguments
+    """
+    if not args_dict:
+        return "{}"
+
+    formatted_pairs = []
+
+    for key, value in args_dict.items():
+        value_str = str(value)
+        lines = value_str.split('\n')
+
+        if len(lines) <= threshold:
+            if len(lines) == 1 and len(value_str) > 80:
+                # Single long line - truncate
+                truncated = value_str[:77] + "..."
+                formatted_pairs.append(f"  {key}: {truncated}")
+            else:
+                # Add indentation for multi-line values
+                if len(lines) > 1:
+                    indented_value = '\n    '.join([''] + lines)
+                    formatted_pairs.append(f"  {key}:{indented_value}")
+                else:
+                    formatted_pairs.append(f"  {key}: {value_str}")
+        else:
+            # Truncate and add summary
+            truncated_lines = lines[:threshold]
+            remaining_lines = len(lines) - threshold
+            indented_value = '\n    '.join([''] + truncated_lines)
+            formatted_pairs.append(f"  {key}:{indented_value}\n    [+{remaining_lines} more lines]")
+
+    return "{\n" + ",\n".join(formatted_pairs) + "\n}"
+
+
 class ToolMonitoringMiddleware(AgentMiddleware):
-    def __init__(self, *, stream_message: BasePersona.stream_message):
-        self.stream_message = stream_message
+    def __init__(self, *, persona: BasePersona):
+        self.stream_message = persona.stream_message
+        self.log = persona.log
 
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
-        running_tool_msg = f"Running **{request.tool_call['name']}** with *{request.tool_call['args']}*"
-        await self.stream_message(self._aiter(running_tool_msg))
+        args = format_tool_args_compact(request.tool_call['args'])
+        self.log.info(f"{request.tool_call['name']}({args})")
+        
         try:
             result = await handler(request)
-            if hasattr(result, "content") and result.content != "null":
-                completed_tool_msg = str(result.content)[:100]
-            else:
-                completed_tool_msg = "Done!"
-            await self.stream_message(self._aiter(completed_tool_msg))
+            self.log.info(f"{request.tool_call['name']} Done!")
             return result
         except Exception as e:
-            await self.stream_message(f"**{request.tool_call['name']}** failed: {e}")
+            self.log.info(f"{request.tool_call['name']} failed: {e}")
             return ToolMessage(
                 tool_call_id=request.tool_call["id"], status="error", content=f"{e}"
             )
-
-    async def _aiter(self, message: str):
-        yield message
 
 
 class JupyternautPersona(BasePersona):
@@ -78,26 +117,13 @@ class JupyternautPersona(BasePersona):
         return self._memory_store
 
     def get_tools(self):
-        tools = []
-        tools += nb_toolkit
-
-        return tools
+        tools = nb_toolkit
+        tools += jlab_toolkit
+        return nb_toolkit
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
         model = ChatLiteLLM(**model_args, model_id=model_id, streaming=True)
         memory_store = await self.get_memory_store()
-
-        @wrap_tool_call
-        def handle_tool_errors(request, handler):
-            """Handle tool execution errors with custom messages."""
-            try:
-                return handler(request)
-            except Exception as e:
-                # Return a custom error message to the model
-                return ToolMessage(
-                    content=f"Error calling tool: ({str(e)})",
-                    tool_call_id=request.tool_call["id"],
-                )
 
         if not hasattr(self, "search_tool"):
             self.search_tool = FilesystemFileSearchMiddleware(
@@ -107,15 +133,15 @@ class JupyternautPersona(BasePersona):
             self.shell_tool = ShellToolMiddleware(workspace_root=self.parent.root_dir)
         if not hasattr(self, "tool_call_handler"):
             self.tool_call_handler = ToolMonitoringMiddleware(
-                stream_message=self.stream_message
+                persona=self
             )
-
+        
         return create_agent(
             model,
             system_prompt=system_prompt,
             checkpointer=memory_store,
-            tools=self.get_tools(),
-            middleware=[self.search_tool, self.shell_tool, self.tool_call_handler],
+            tools=self.get_tools(), # notebook and jlab tools
+            middleware=[self.shell_tool, self.tool_call_handler],
         )
 
     async def process_message(self, message: Message) -> None:
@@ -139,17 +165,19 @@ class JupyternautPersona(BasePersona):
         )
 
         async def create_aiter():
-            async for chunk, _ in agent.astream(
+            async for token, metadata in agent.astream(
                 {"messages": [{"role": "user", "content": message.body}]},
                 {"configurable": {"thread_id": self.ychat.get_id()}},
                 stream_mode="messages",
             ):
+                node = metadata["langgraph_node"]
+                content_blocks = token.content_blocks
                 if (
-                    hasattr(chunk, "content")
-                    and (content := chunk.content)
-                    and content != "null"
+                    node == "model" 
+                    and content_blocks
                 ):
-                    yield content
+                    if token.text:
+                        yield token.text
 
         response_aiter = create_aiter()
         await self.stream_message(response_aiter)

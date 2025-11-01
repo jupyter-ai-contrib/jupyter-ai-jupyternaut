@@ -3,7 +3,7 @@ import difflib
 import json
 import os
 import re
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import nbformat
 from jupyter_ydoc import YNotebook
@@ -80,6 +80,177 @@ async def read_notebook(file_path: str, include_outputs=False) -> str:
         return notebook_md
     except Exception:
         raise
+
+def clean_text(text: Union[str, list, None]) -> Optional[str]:
+    """
+    Clean and format text output (equivalent to kC0).
+    
+    Args:
+        text: Text data that might be string, list, or None
+        
+    Returns:
+        Cleaned text string or None
+    """
+    if text is None:
+        return None
+
+    if isinstance(text, list):
+        return ''.join(str(item) for item in text)
+
+    return str(text)
+
+def process_notebook_output(output_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Process a Jupyter notebook cell output into a standardized format.
+    
+    Args:
+        output_data: Raw output data from notebook cell
+        
+    Returns:
+        Processed output dictionary with standardized format
+    """
+    output_type = output_data.get('output_type')
+
+    if output_type == "stream":
+        return {
+            'output_type': output_type,
+            'text': clean_text(output_data.get('text', ''))
+        }
+
+    elif output_type in ["execute_result", "display_data"]:
+        data = output_data.get('data', {})
+        return {
+            'output_type': output_type,
+            'text': clean_text(data.get('text/plain')),
+            'image': extract_image_data(data) if data else None,
+        }
+
+    elif output_type == "error":
+        error_name = output_data.get('ename', '')
+        error_value = output_data.get('evalue', '')
+        traceback = output_data.get('traceback', [])
+
+        error_text = f"{error_name}: {error_value}\n{chr(10).join(traceback)}"
+
+        return {
+            'output_type': output_type,
+            'text': clean_text(error_text),
+        }
+
+    # Handle unknown output types
+    return output_data
+
+def extract_image_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Extract image data from notebook output data (equivalent to qh6).
+    
+    Args:
+        data: Output data dictionary that may contain various MIME types
+        
+    Returns:
+        Extracted image data or None
+    """
+    # Common image MIME types in Jupyter notebooks
+    image_mime_types = [
+        'image/png',
+        'image/jpeg',
+        'image/jpg',
+        'image/gif',
+        'image/svg+xml'
+    ]
+
+    for mime_type in image_mime_types:
+        if mime_type in data:
+            return {
+                'mime_type': mime_type,
+                'data': data[mime_type]
+            }
+
+    return None
+
+def format_notebook_cell(cell_data: Dict[str, Any], cell_index: int, language: str, include_full_outputs: bool = False) -> Dict[str, Any]:
+      """
+      Format a Jupyter notebook cell into a standardized format.
+      
+      Args:
+          cell_data: Raw cell data from notebook JSON
+          cell_index: Index of the cell in the notebook
+          language: Programming language of the notebook
+          include_full_outputs: Whether to include full outputs or truncate large ones
+      """
+      cell_id = cell_data.get('id', f'cell-{cell_index}')
+
+      formatted_cell = {
+          'cellType': cell_data['cell_type'],
+          'source': ''.join(cell_data['source']) if isinstance(cell_data['source'], list) else cell_data['source'],
+          'execution_count': cell_data.get('execution_count') if cell_data['cell_type'] == 'code' else None,
+          'cell_id': cell_id,
+      }
+
+      # Add language for code cells
+      if cell_data['cell_type'] == 'code':
+          formatted_cell['language'] = language
+
+      # Handle outputs for code cells
+      if cell_data['cell_type'] == 'code' and cell_data.get('outputs'):
+          processed_outputs = [process_notebook_output(output) for output in cell_data['outputs']]
+
+          # Truncate large outputs unless specifically requested to include full outputs
+          if not include_full_outputs and len(json.dumps(processed_outputs)) > 10000:
+              formatted_cell['outputs'] = [
+                  {
+                      'output_type': 'stream',
+                      'text': f'Outputs are too large to include. Use command with: cat <notebook_path> | jq \'.cells[{cell_index}].outputs\'',
+                  }
+              ]
+          else:
+              formatted_cell['outputs'] = processed_outputs
+
+      return formatted_cell
+
+async def read_notebook_cells(notebook_path: str, specific_cell_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Read and process cells from a Jupyter notebook file.
+    
+    Args:
+        notebook_path: Path to the notebook file
+        specific_cell_id: Optional cell ID to return only that cell
+        
+    Returns:
+        List of formatted cell dictionaries
+        
+    Raises:
+        FileNotFoundError: If notebook file doesn't exist
+        ValueError: If specific cell ID is not found
+    """
+    resolved_path = normalize_filepath(notebook_path)
+
+    with open(resolved_path, 'r', encoding='utf-8') as file:
+        notebook_data = json.load(file)
+
+    language = notebook_data.get('metadata', {}).get('language_info', {}).get('name', 'python')
+
+    # If requesting a specific cell
+    if specific_cell_id:
+        target_cell = None
+        cell_index = -1
+
+        for i, cell in enumerate(notebook_data['cells']):
+            if cell.get('id') == specific_cell_id:
+                target_cell = cell
+                cell_index = i
+                break
+
+        if target_cell is None:
+            raise ValueError(f'Cell with ID "{specific_cell_id}" not found in notebook')
+
+        return [format_notebook_cell(target_cell, cell_index, language, include_full_outputs=True)]
+
+    # Return all cells
+    return [
+        format_notebook_cell(cell, index, language, include_full_outputs=False)
+        for index, cell in enumerate(notebook_data['cells'])
+    ]
 
 
 async def read_notebook_json(file_path: str) -> Dict[str, Any]:
@@ -295,24 +466,19 @@ async def add_cell(
 
 async def insert_cell(
     file_path: str,
+    insert_index: int,
     content: str | None = None,
-    insert_index: int | None = None,
     cell_type: Literal["code", "markdown", "raw"] = "code",
 ):
     """Inserts a new cell to the Jupyter notebook at the specified cell index.
 
-    This function adds a new cell to a Jupyter notebook. It first attempts to use
-    the in-memory YDoc representation if the notebook is currently active. If the
-    notebook is not active, it falls back to using the filesystem to read, modify,
-    and write the notebook file directly.
-
     Args:
         file_path:
             The relative path to the notebook file on the filesystem.
-        content:
-            The content of the new cell. If None, an empty cell is created.
         insert_index:
             The index to insert the cell at.
+        content:
+            The content of the new cell. If None, an empty cell is created.
         cell_type:
             The type of cell to add ("code", "markdown", "raw").
 
@@ -1001,14 +1167,11 @@ async def create_notebook(file_path: str) -> str:
     except Exception as e:
         return f"Error: Failed to create notebook: {str(e)}"
 
-
 toolkit = [
-    read_notebook,
-    read_cell,
+    read_notebook_cells,
     add_cell,
     insert_cell,
     delete_cell,
     edit_cell,
-    get_cell_id_from_index,
     create_notebook
 ]
