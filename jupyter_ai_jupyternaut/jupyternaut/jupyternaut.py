@@ -25,6 +25,10 @@ from .toolkits.jupyterlab import toolkit as jlab_toolkit
 
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
+JUPYTERNAUT_AVATAR_PATH = str(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../static", "jupyternaut.svg")
+))
+
 
 def format_tool_args_compact(args_dict, threshold=25):
     """
@@ -105,7 +109,7 @@ class JupyternautPersona(BasePersona):
     def defaults(self):
         return PersonaDefaults(
             name="Jupyternaut",
-            avatar_path="/api/jupyternaut/static/jupyternaut.svg",
+            avatar_path=JUPYTERNAUT_AVATAR_PATH,
             description="The standard agent provided by JupyterLab. Currently has no tools.",
             system_prompt="...",
         )
