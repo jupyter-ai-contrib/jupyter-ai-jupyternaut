@@ -197,6 +197,6 @@ class JupyternautPersona(BasePersona):
         return JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args)
 
     def shutdown(self):
-        if self._memory_store:
+        if hasattr(self,"_memory_store"):
             self.parent.event_loop.create_task(self._memory_store.conn.close())
         super().shutdown()
