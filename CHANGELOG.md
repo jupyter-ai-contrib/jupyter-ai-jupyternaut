@@ -2,6 +2,22 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.4
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.3...95903b0048df18bb2f405d49d82a9f88db784a31))
+
+### Bugs fixed
+
+- Fixes avatar path [#18](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/18) ([@3coins](https://github.com/3coins))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-02&to=2025-11-03&type=c))
+
+[@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-11-02..2025-11-03&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.3
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.2...4923218b2eadb4b7f919b83cecf277ea1a7a9fa0))
@@ -16,8 +32,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-10-14&to=2025-11-02&type=c))
 
 [@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-10-14..2025-11-02&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.2
 
