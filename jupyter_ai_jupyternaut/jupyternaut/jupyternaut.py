@@ -85,7 +85,7 @@ class ToolMonitoringMiddleware(AgentMiddleware):
     ) -> ToolMessage | Command:
         args = format_tool_args_compact(request.tool_call['args'])
         self.log.info(f"{request.tool_call['name']}({args})")
-        
+
         try:
             result = await handler(request)
             self.log.info(f"{request.tool_call['name']} Done!")
@@ -126,7 +126,7 @@ class JupyternautPersona(BasePersona):
         return nb_toolkit
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
-        model = ChatLiteLLM(**model_args, model_id=model_id, streaming=True)
+        model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
 
         if not hasattr(self, "search_tool"):
@@ -139,7 +139,7 @@ class JupyternautPersona(BasePersona):
             self.tool_call_handler = ToolMonitoringMiddleware(
                 persona=self
             )
-        
+
         return create_agent(
             model,
             system_prompt=system_prompt,
@@ -177,7 +177,7 @@ class JupyternautPersona(BasePersona):
                 node = metadata["langgraph_node"]
                 content_blocks = token.content_blocks
                 if (
-                    node == "model" 
+                    node == "model"
                     and content_blocks
                 ):
                     if token.text:
