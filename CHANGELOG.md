@@ -2,6 +2,22 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.5
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.4...a9ab819eb3def728acc088b3be8b6fe80ded09b4))
+
+### Bugs fixed
+
+- Fix the agent model by providing the correct attribute to the ChatLiteLLM [#19](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/19) ([@brichet](https://github.com/brichet))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-03&to=2025-11-05&type=c))
+
+[@brichet](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2025-11-03..2025-11-05&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.4
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.3...95903b0048df18bb2f405d49d82a9f88db784a31))
@@ -15,8 +31,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-02&to=2025-11-03&type=c))
 
 [@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-11-02..2025-11-03&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.3
 
