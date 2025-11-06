@@ -13,4 +13,10 @@ async def run_all_cells():
     """
     return await execute_command("notebook:run-all-cells")
 
-toolkit = [open_file, run_all_cells]
+async def restart_kernel():
+    """
+    Restarts the notebook kernel, useful when new packages are installed
+    """
+    return await execute_command("notebook:restart-kernel")
+
+toolkit = [open_file, run_all_cells, restart_kernel]
