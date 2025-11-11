@@ -22,6 +22,7 @@ from .prompt_template import (
 )
 from .toolkits.notebook import toolkit as nb_toolkit
 from .toolkits.jupyterlab import toolkit as jlab_toolkit
+from .toolkits.code_execution import toolkit as exec_toolkit
 
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
@@ -123,29 +124,18 @@ class JupyternautPersona(BasePersona):
     def get_tools(self):
         tools = nb_toolkit
         tools += jlab_toolkit
-        return nb_toolkit
+        tools += exec_toolkit
+        return tools
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
-
-        if not hasattr(self, "search_tool"):
-            self.search_tool = FilesystemFileSearchMiddleware(
-                root_path=self.parent.root_dir
-            )
-        if not hasattr(self, "shell_tool"):
-            self.shell_tool = ShellToolMiddleware(workspace_root=self.parent.root_dir)
-        if not hasattr(self, "tool_call_handler"):
-            self.tool_call_handler = ToolMonitoringMiddleware(
-                persona=self
-            )
-
+  
         return create_agent(
             model,
             system_prompt=system_prompt,
             checkpointer=memory_store,
-            tools=self.get_tools(), # notebook and jlab tools
-            middleware=[self.shell_tool, self.tool_call_handler],
+            tools=self.get_tools(),
         )
 
     async def process_message(self, message: Message) -> None:

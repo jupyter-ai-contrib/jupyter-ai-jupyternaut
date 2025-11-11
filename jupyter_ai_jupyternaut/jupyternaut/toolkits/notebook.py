@@ -3,18 +3,18 @@ import difflib
 import json
 import os
 import re
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import nbformat
 from jupyter_ydoc import YNotebook
 from pycrdt import Assoc, Text
 
+from .jupyterlab import open_file
+
 from .utils import (
-    cell_to_md,
     get_file_id,
     get_jupyter_ydoc,
     normalize_filepath,
-    notebook_json_to_md,
 )
 
 
@@ -57,37 +57,13 @@ async def _resolve_cell_id(file_path: str, cell_id_or_index: str) -> str:
         return cell_id_or_index
 
 
-async def read_notebook(file_path: str, include_outputs=False) -> str:
-    """Returns the complete notebook content as markdown string.
-
-    This function reads a Jupyter notebook file and converts its content to a markdown string.
-    It uses the read_notebook_json function to read the notebook file and then converts
-    the resulting JSON to markdown.
-
-    Args:
-        file_path:
-            The relative path to the notebook file on the filesystem.
-        include_outputs:
-            If True, cell outputs will be included in the markdown. Default is False.
-
-    Returns:
-        The notebook content as a markdown string.
-    """
-    try:
-        file_path = normalize_filepath(file_path)
-        notebook_dict = await read_notebook_json(file_path)
-        notebook_md = notebook_json_to_md(notebook_dict, include_outputs=include_outputs)
-        return notebook_md
-    except Exception:
-        raise
-
 def clean_text(text: Union[str, list, None]) -> Optional[str]:
     """
-    Clean and format text output (equivalent to kC0).
-    
+    Clean and format text output.
+
     Args:
         text: Text data that might be string, list, or None
-        
+
     Returns:
         Cleaned text string or None
     """
@@ -95,148 +71,163 @@ def clean_text(text: Union[str, list, None]) -> Optional[str]:
         return None
 
     if isinstance(text, list):
-        return ''.join(str(item) for item in text)
+        return "".join(str(item) for item in text)
 
     return str(text)
+
 
 def process_notebook_output(output_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process a Jupyter notebook cell output into a standardized format.
-    
+
     Args:
         output_data: Raw output data from notebook cell
-        
+
     Returns:
         Processed output dictionary with standardized format
     """
-    output_type = output_data.get('output_type')
+    output_type = output_data.get("output_type")
 
     if output_type == "stream":
         return {
-            'output_type': output_type,
-            'text': clean_text(output_data.get('text', ''))
+            "output_type": output_type,
+            "text": clean_text(output_data.get("text", "")),
         }
 
     elif output_type in ["execute_result", "display_data"]:
-        data = output_data.get('data', {})
+        data = output_data.get("data", {})
         return {
-            'output_type': output_type,
-            'text': clean_text(data.get('text/plain')),
-            'image': extract_image_data(data) if data else None,
+            "output_type": output_type,
+            "text": clean_text(data.get("text/plain")),
+            "image": extract_image_data(data) if data else None,
         }
 
     elif output_type == "error":
-        error_name = output_data.get('ename', '')
-        error_value = output_data.get('evalue', '')
-        traceback = output_data.get('traceback', [])
+        error_name = output_data.get("ename", "")
+        error_value = output_data.get("evalue", "")
+        traceback = output_data.get("traceback", [])
 
         error_text = f"{error_name}: {error_value}\n{chr(10).join(traceback)}"
 
         return {
-            'output_type': output_type,
-            'text': clean_text(error_text),
+            "output_type": output_type,
+            "text": clean_text(error_text),
         }
 
-    # Handle unknown output types
     return output_data
+
 
 def extract_image_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Extract image data from notebook output data (equivalent to qh6).
-    
+
     Args:
         data: Output data dictionary that may contain various MIME types
-        
+
     Returns:
         Extracted image data or None
     """
     # Common image MIME types in Jupyter notebooks
     image_mime_types = [
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-        'image/gif',
-        'image/svg+xml'
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/svg+xml",
     ]
 
     for mime_type in image_mime_types:
         if mime_type in data:
-            return {
-                'mime_type': mime_type,
-                'data': data[mime_type]
-            }
+            return {"mime_type": mime_type, "data": data[mime_type]}
 
     return None
 
-def format_notebook_cell(cell_data: Dict[str, Any], cell_index: int, language: str, include_full_outputs: bool = False) -> Dict[str, Any]:
-      """
-      Format a Jupyter notebook cell into a standardized format.
-      
-      Args:
-          cell_data: Raw cell data from notebook JSON
-          cell_index: Index of the cell in the notebook
-          language: Programming language of the notebook
-          include_full_outputs: Whether to include full outputs or truncate large ones
-      """
-      cell_id = cell_data.get('id', f'cell-{cell_index}')
 
-      formatted_cell = {
-          'cellType': cell_data['cell_type'],
-          'source': ''.join(cell_data['source']) if isinstance(cell_data['source'], list) else cell_data['source'],
-          'execution_count': cell_data.get('execution_count') if cell_data['cell_type'] == 'code' else None,
-          'cell_id': cell_id,
-      }
+def format_notebook_cell(
+    cell_data: Dict[str, Any],
+    cell_index: int,
+    language: str,
+    include_full_outputs: bool = False,
+) -> Dict[str, Any]:
+    """
+    Format a Jupyter notebook cell into a standardized format.
 
-      # Add language for code cells
-      if cell_data['cell_type'] == 'code':
-          formatted_cell['language'] = language
+    Args:
+        cell_data: Raw cell data from notebook JSON
+        cell_index: Index of the cell in the notebook
+        language: Programming language of the notebook
+        include_full_outputs: Whether to include full outputs or truncate large ones
+    """
+    cell_id = cell_data.get("id", f"cell-{cell_index}")
 
-      # Handle outputs for code cells
-      if cell_data['cell_type'] == 'code' and cell_data.get('outputs'):
-          processed_outputs = [process_notebook_output(output) for output in cell_data['outputs']]
+    formatted_cell = {
+        "cellType": cell_data["cell_type"],
+        "source": "".join(cell_data["source"])
+        if isinstance(cell_data["source"], list)
+        else cell_data["source"],
+        "execution_count": cell_data.get("execution_count")
+        if cell_data["cell_type"] == "code"
+        else None,
+        "cell_id": cell_id,
+    }
 
-          # Truncate large outputs unless specifically requested to include full outputs
-          if not include_full_outputs and len(json.dumps(processed_outputs)) > 10000:
-              formatted_cell['outputs'] = [
-                  {
-                      'output_type': 'stream',
-                      'text': f'Outputs are too large to include. Use command with: cat <notebook_path> | jq \'.cells[{cell_index}].outputs\'',
-                  }
-              ]
-          else:
-              formatted_cell['outputs'] = processed_outputs
+    # Add language for code cells
+    if cell_data["cell_type"] == "code":
+        formatted_cell["language"] = language
 
-      return formatted_cell
+    # Handle outputs for code cells
+    if cell_data["cell_type"] == "code" and cell_data.get("outputs"):
+        processed_outputs = [
+            process_notebook_output(output) for output in cell_data["outputs"]
+        ]
 
-async def read_notebook_cells(notebook_path: str, specific_cell_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        # Truncate large outputs unless specifically requested to include full outputs
+        if not include_full_outputs and len(json.dumps(processed_outputs)) > 10000:
+            formatted_cell["outputs"] = [
+                {
+                    "output_type": "stream",
+                    "text": f"Outputs are too large to include. Use command with: cat <notebook_path> | jq '.cells[{cell_index}].outputs'",
+                }
+            ]
+        else:
+            formatted_cell["outputs"] = processed_outputs
+
+    return formatted_cell
+
+
+async def read_notebook_cells(
+    notebook_path: str, specific_cell_id: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """
     Read and process cells from a Jupyter notebook file.
-    
+
     Args:
         notebook_path: Path to the notebook file
         specific_cell_id: Optional cell ID to return only that cell
-        
+
     Returns:
         List of formatted cell dictionaries
-        
+
     Raises:
         FileNotFoundError: If notebook file doesn't exist
         ValueError: If specific cell ID is not found
     """
     resolved_path = normalize_filepath(notebook_path)
 
-    with open(resolved_path, 'r', encoding='utf-8') as file:
+    with open(resolved_path, "r", encoding="utf-8") as file:
         notebook_data = json.load(file)
 
-    language = notebook_data.get('metadata', {}).get('language_info', {}).get('name', 'python')
+    language = (
+        notebook_data.get("metadata", {}).get("language_info", {}).get("name", "python")
+    )
 
     # If requesting a specific cell
     if specific_cell_id:
         target_cell = None
         cell_index = -1
 
-        for i, cell in enumerate(notebook_data['cells']):
-            if cell.get('id') == specific_cell_id:
+        for i, cell in enumerate(notebook_data["cells"]):
+            if cell.get("id") == specific_cell_id:
                 target_cell = cell
                 cell_index = i
                 break
@@ -244,12 +235,16 @@ async def read_notebook_cells(notebook_path: str, specific_cell_id: Optional[str
         if target_cell is None:
             raise ValueError(f'Cell with ID "{specific_cell_id}" not found in notebook')
 
-        return [format_notebook_cell(target_cell, cell_index, language, include_full_outputs=True)]
+        return [
+            format_notebook_cell(
+                target_cell, cell_index, language, include_full_outputs=True
+            )
+        ]
 
     # Return all cells
     return [
         format_notebook_cell(cell, index, language, include_full_outputs=False)
-        for index, cell in enumerate(notebook_data['cells'])
+        for index, cell in enumerate(notebook_data["cells"])
     ]
 
 
@@ -271,75 +266,6 @@ async def read_notebook_json(file_path: str) -> Dict[str, Any]:
         with open(file_path, "r", encoding="utf-8") as f:
             notebook_dict = json.load(f)
             return notebook_dict
-    except Exception:
-        raise
-
-
-async def read_cell(file_path: str, cell_id: str, include_outputs: bool = True) -> str:
-    """Returns the notebook cell as a markdown string.
-
-    This function reads a specific cell from a Jupyter notebook file and converts
-    it to a markdown string. It uses the read_cell_json function to read the cell
-    and then converts it to markdown.
-
-    Args:
-        file_path:
-            The relative path to the notebook file on the filesystem.
-        cell_id:
-            The UUID of the cell to read, or a numeric index as string.
-        include_outputs:
-            If True, cell outputs will be included in the markdown. Default is True.
-
-    Returns:
-        The cell content as a markdown string.
-
-    Raises:
-        LookupError: If no cell with the given ID is found.
-    """
-    try:
-        file_path = normalize_filepath(file_path)
-        # Resolve cell_id in case it's an index
-        resolved_cell_id = await _resolve_cell_id(file_path, cell_id)
-        cell, cell_index = await read_cell_json(file_path, resolved_cell_id)
-        cell_md = cell_to_md(cell, cell_index)
-        return cell_md
-    except Exception:
-        raise
-
-
-async def read_cell_json(file_path: str, cell_id: str) -> Tuple[Dict[str, Any], int]:
-    """Returns the notebook cell as a JSON dictionary and its index.
-
-    This function reads a specific cell from a Jupyter notebook file and returns
-    both the cell content as a dictionary and the cell's index within the notebook.
-
-    Args:
-        file_path:
-            The relative path to the notebook file on the filesystem.
-        cell_id:
-            The UUID of the cell to read, or a numeric index as string.
-
-    Returns:
-        A tuple containing:
-        - The cell as a dictionary
-        - The index of the cell in the notebook
-
-    Raises:
-        LookupError: If no cell with the given ID is found.
-    """
-    try:
-        file_path = normalize_filepath(file_path)
-        # Resolve cell_id in case it's an index
-        resolved_cell_id = await _resolve_cell_id(file_path, cell_id)
-        notebook_json = await read_notebook_json(file_path)
-        cell_index = _get_cell_index_from_id_json(notebook_json, resolved_cell_id)
-
-        if cell_index is not None and 0 <= cell_index < len(notebook_json["cells"]):
-            cell = notebook_json["cells"][cell_index]
-            return cell, cell_index
-
-        raise LookupError(f"No cell found with {cell_id=}")
-
     except Exception:
         raise
 
@@ -414,7 +340,9 @@ async def add_cell(
     try:
         file_path = normalize_filepath(file_path)
         # Resolve cell_id in case it's an index
-        resolved_cell_id = await _resolve_cell_id(file_path, cell_id) if cell_id else None
+        resolved_cell_id = (
+            await _resolve_cell_id(file_path, cell_id) if cell_id else None
+        )
 
         file_id = await get_file_id(file_path)
         ydoc: YNotebook = await get_jupyter_ydoc(file_id)
@@ -422,7 +350,9 @@ async def add_cell(
         if ydoc:
             cells_count = ydoc.cell_number
             cell_index = (
-                _get_cell_index_from_id_ydoc(ydoc, resolved_cell_id) if resolved_cell_id else None
+                _get_cell_index_from_id_ydoc(ydoc, resolved_cell_id)
+                if resolved_cell_id
+                else None
             )
             insert_index = _determine_insert_index(cells_count, cell_index, add_above)
 
@@ -449,74 +379,17 @@ async def add_cell(
             insert_index = _determine_insert_index(cells_count, cell_index, add_above)
 
             if cell_type == "code":
-                notebook.cells.insert(insert_index, nbformat.v4.new_code_cell(source=content or ""))
+                notebook.cells.insert(
+                    insert_index, nbformat.v4.new_code_cell(source=content or "")
+                )
             elif cell_type == "markdown":
                 notebook.cells.insert(
                     insert_index, nbformat.v4.new_markdown_cell(source=content or "")
                 )
             else:
-                notebook.cells.insert(insert_index, nbformat.v4.new_raw_cell(source=content or ""))
-
-            with open(file_path, "w", encoding="utf-8") as f:
-                nbformat.write(notebook, f)
-
-    except Exception:
-        raise
-
-
-async def insert_cell(
-    file_path: str,
-    insert_index: int,
-    content: str | None = None,
-    cell_type: Literal["code", "markdown", "raw"] = "code",
-):
-    """Inserts a new cell to the Jupyter notebook at the specified cell index.
-
-    Args:
-        file_path:
-            The relative path to the notebook file on the filesystem.
-        insert_index:
-            The index to insert the cell at.
-        content:
-            The content of the new cell. If None, an empty cell is created.
-        cell_type:
-            The type of cell to add ("code", "markdown", "raw").
-
-    Returns:
-        None
-    """
-    try:
-        file_path = normalize_filepath(file_path)
-        file_id = await get_file_id(file_path)
-        ydoc = await get_jupyter_ydoc(file_id)
-
-        if ydoc:
-            cells_count = ydoc.cell_number
-
-            cell = {
-                "cell_type": cell_type,
-                "source": "",
-            }
-            ycell = ydoc.create_ycell(cell)
-            if insert_index >= cells_count:
-                ydoc.ycells.append(ycell)
-            else:
-                ydoc.ycells.insert(insert_index, ycell)
-            await write_to_cell_collaboratively(ydoc, ycell, content or "")
-        else:
-            with open(file_path, "r", encoding="utf-8") as f:
-                notebook = nbformat.read(f, as_version=nbformat.NO_CONVERT)
-
-            cells_count = len(notebook.cells)
-
-            if cell_type == "code":
-                notebook.cells.insert(insert_index, nbformat.v4.new_code_cell(source=content or ""))
-            elif cell_type == "markdown":
                 notebook.cells.insert(
-                    insert_index, nbformat.v4.new_markdown_cell(source=content or "")
+                    insert_index, nbformat.v4.new_raw_cell(source=content or "")
                 )
-            else:
-                notebook.cells.insert(insert_index, nbformat.v4.new_raw_cell(source=content or ""))
 
             with open(file_path, "w", encoding="utf-8") as f:
                 nbformat.write(notebook, f)
@@ -629,7 +502,10 @@ def get_cursor_details(
 
 
 def set_cursor_in_ynotebook(
-    ynotebook: YNotebook, cell_source: Text, start_index: int, stop_index: Optional[int] = None
+    ynotebook: YNotebook,
+    cell_source: Text,
+    start_index: int,
+    stop_index: Optional[int] = None,
 ) -> None:
     """
     Sets the cursor position in a collaborative notebook environment.
@@ -740,7 +616,13 @@ async def write_to_cell_collaboratively(
         _safe_set_cursor(ynotebook, cell_source, cursor_position)
 
         # Apply each change operation sequentially
-        for operation, old_start, old_end, new_start, new_end in sequence_matcher.get_opcodes():
+        for (
+            operation,
+            old_start,
+            old_end,
+            new_start,
+            new_end,
+        ) in sequence_matcher.get_opcodes():
             if operation == "equal":
                 # No changes needed for this segment, just advance cursor
                 cursor_position += old_end - old_start
@@ -789,7 +671,11 @@ async def write_to_cell_collaboratively(
 
 
 async def _handle_delete_operation(
-    ynotebook, cell_source, cursor_position: int, delete_length: int, typing_speed: float
+    ynotebook,
+    cell_source,
+    cursor_position: int,
+    delete_length: int,
+    typing_speed: float,
 ) -> None:
     """
     Handle deletion of text chunks with visual feedback.
@@ -809,7 +695,9 @@ async def _handle_delete_operation(
         None
     """
     # Highlight the text chunk that will be deleted (visual feedback)
-    _safe_set_cursor(ynotebook, cell_source, cursor_position, cursor_position + delete_length)
+    _safe_set_cursor(
+        ynotebook, cell_source, cursor_position, cursor_position + delete_length
+    )
     await asyncio.sleep(min(0.3, typing_speed * 3))  # Cap highlight duration at 0.3s
 
     # Perform the actual deletion
@@ -928,14 +816,23 @@ async def _handle_replace_operation(
 
     # Then, insert the new text with typing simulation
     cursor_position = await _handle_insert_operation(
-        ynotebook, cell_source, cursor_position, new_content, new_start, new_end, typing_speed
+        ynotebook,
+        cell_source,
+        cursor_position,
+        new_content,
+        new_start,
+        new_end,
+        typing_speed,
     )
 
     return cursor_position
 
 
 def _safe_set_cursor(
-    ynotebook: YNotebook, cell_source: Text, cursor_position: int, stop_cursor: Optional[int] = None
+    ynotebook: YNotebook,
+    cell_source: Text,
+    cursor_position: int,
+    stop_cursor: Optional[int] = None,
 ) -> None:
     """
     Safely set cursor position with error handling.
@@ -1010,7 +907,9 @@ async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
                 with open(file_path, "w", encoding="utf-8") as f:
                     nbformat.write(notebook, f)
             else:
-                raise ValueError(f"Cell with {cell_id=} not found in notebook at {file_path=}")
+                raise ValueError(
+                    f"Cell with {cell_id=} not found in notebook at {file_path=}"
+                )
 
     except Exception:
         raise
@@ -1107,7 +1006,9 @@ def _get_cell_index_from_id_nbformat(notebook, cell_id: str) -> int | None:
     return None
 
 
-def _determine_insert_index(cells_count: int, cell_index: Optional[int], add_above: bool) -> int:
+def _determine_insert_index(
+    cells_count: int, cell_index: Optional[int], add_above: bool
+) -> int:
     """Determine the index where a new cell should be inserted.
 
     Args:
@@ -1134,7 +1035,8 @@ async def create_notebook(file_path: str) -> str:
     """Creates a new empty Jupyter notebook at the specified file path.
 
     This function creates a new empty notebook with proper nbformat structure.
-    If the file already exists, it will return an error message.
+    If the file already exists, it raises an error, otherwise opens the notebook
+    in JupyterLab.
 
     Args:
         file_path:
@@ -1148,7 +1050,7 @@ async def create_notebook(file_path: str) -> str:
 
         # Check if file already exists
         if os.path.exists(file_path):
-            return f"Error: File already exists at {file_path}"
+            raise FileExistsError(f"Notebook at path {file_path} already exists.")
 
         # Ensure the directory exists
         directory = os.path.dirname(file_path)
@@ -1158,20 +1060,28 @@ async def create_notebook(file_path: str) -> str:
         # Create a new empty notebook
         notebook = nbformat.v4.new_notebook()
 
+        notebook["metadata"] = {
+            "kernelspec": {
+                "name": "python3",
+                "display_name": "Python 3",
+                "language": "python",
+            }
+        }
+
         # Write the notebook to the file
         with open(file_path, "w", encoding="utf-8") as f:
             nbformat.write(notebook, f)
 
-        return f"Successfully created new notebook at {file_path}"
+        return await open_file(file_path)
 
     except Exception as e:
         return f"Error: Failed to create notebook: {str(e)}"
 
+
 toolkit = [
     read_notebook_cells,
     add_cell,
-    insert_cell,
     delete_cell,
     edit_cell,
-    create_notebook
+    create_notebook,
 ]
