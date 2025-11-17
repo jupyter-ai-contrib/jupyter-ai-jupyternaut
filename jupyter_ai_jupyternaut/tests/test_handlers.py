@@ -46,3 +46,21 @@ async def test_get_parameters(jp_fetch, model):
         assert param in payload["parameter_names"]
         assert param in payload["parameters"]
         assert "description" in payload["parameters"][param]
+
+
+async def test_put_params(jp_fetch):
+    # TODO: validate all types, error handling
+    response = await jp_fetch(
+        "api/jupyternaut/model-parameters",
+        body=json.dumps({
+            "model_id": "hosted_vllm/mlx-community/gpt-oss-20b-MXFP4-Q8",
+            "parameters": {
+                "api_base": {
+                    "value": "http://127.0.0.1:8080",
+                    "type": "string",
+                },
+            },
+        }),
+        method="PUT",
+    )
+    assert response.code == 200

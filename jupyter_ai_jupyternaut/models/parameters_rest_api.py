@@ -113,7 +113,7 @@ class ModelParametersRestAPI(BaseAPIHandler):
                 except ValueError as e:
                     raise HTTPError(400, f"Invalid value for parameter '{param_name}': {str(e)}")
             
-            config_manager = self.settings.get("jai_config_manager")
+            config_manager = self.settings.get("jupyternaut.config_manager")
             if not config_manager:
                 raise HTTPError(500, "Config manager not available")
             
