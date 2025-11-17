@@ -32,6 +32,9 @@ class ModelParametersRestAPI(BaseAPIHandler):
             
             # Temporary common parameters that work across most models
             common_params = ["temperature", "max_tokens", "top_p", "stop"]
+            # parameters that are actually inputs to the client, not the model
+            # always include these (get_supported_openai_params doesn't include them)
+            client_params = ["api_base"]
             # Params controlling tool availability & usage require a unique UX
             # if they are to be made configurable from the frontend. Therefore
             # they are disabled for now.
@@ -49,7 +52,8 @@ class ModelParametersRestAPI(BaseAPIHandler):
                     parameter_names = common_params
             else:
                 parameter_names = common_params
-            
+            # always include client parameters
+            parameter_names.extend(client_params)
             # Filter out excluded params
             parameter_names = [n for n in parameter_names if n not in EXCLUDED_PARAMS]
             

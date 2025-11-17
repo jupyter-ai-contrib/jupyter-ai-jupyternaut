@@ -107,7 +107,7 @@ PARAMETER_SCHEMAS: dict[str, dict[str, Any]] = {
     },
     "api_base": {
         "type": "string",
-        "description": "Base URL where LLM requests are sent, used for enterprise proxy gateways."
+        "description": "Base URL where LLM requests are sent, used for local models, enterprise proxies, or other hosting providers (e.g. vLLM)."
     }
 }
 
