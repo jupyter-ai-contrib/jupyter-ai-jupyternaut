@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from jupyterlab_commands_toolkit.tools import execute_command
 
 from .utils import get_serverapp
@@ -49,13 +50,29 @@ async def run_all_cells():
     return await execute_command("notebook:run-all-cells")
 
 
-async def get_active_cell_index() -> int:
-    pass
+async def run_cell(cell_id: str, username: Optional[str] = None) -> dict:
+    """
+    Runs a specific cell in the active notebook by selecting it and executing it.
 
-async def run_active_cell():
-    """Runs the currently selected/active cell"""
+    Args:
+        cell_id: The UUID of the cell to run, or a numeric index as string
+        username: Optional username to get the active cell for that specific user
 
+    Returns:
+        dict: A dictionary containing the response from the run-cell command
+
+    Raises:
+        ValueError: If the cell_id is not found in the notebook
+        RuntimeError: If there is no active notebook or notebook is not currently open
+    """
+    from .notebook import select_cell
+
+    # First, select the target cell
+    await select_cell(cell_id, username)
+
+    # Then run the currently selected cell
     return await execute_command("notebook:run-cell")
+
 
 async def select_cell_below():
     """
@@ -63,11 +80,13 @@ async def select_cell_below():
     """
     return await execute_command("notebook:move-cursor-down")
 
+
 async def select_cell_above():
     """
     Moves the cursor up to select the cell above the currently selected cell
     """
     return await execute_command("notebook:move-cursor-up")
+
 
 async def restart_kernel():
     """
@@ -76,9 +95,4 @@ async def restart_kernel():
     return await execute_command("notebook:restart-kernel")
 
 
-toolkit = [
-    open_file, 
-    run_active_cell, 
-    run_all_cells, 
-    restart_kernel
-]
+toolkit = [open_file, run_cell, run_all_cells, restart_kernel]

@@ -13,6 +13,7 @@ from .jupyterlab import open_file
 
 from .utils import (
     get_file_id,
+    get_global_awareness,
     get_jupyter_ydoc,
     normalize_filepath,
 )
@@ -862,6 +863,147 @@ def _safe_set_cursor(
         # Cursor positioning is a visual enhancement, not critical functionality
         pass
 
+async def get_active_notebook(username: Optional[str] = None) -> Optional[str]:
+    """
+    Returns path for the currently active notebook.
+    
+    Args:
+        username: Optional username to return a specific user's active notebook
+    
+    Returns:
+        File path for the first active notebook. If username is provided, then
+        returns the active notebook for that specific user.
+    """
+    awareness = await get_global_awareness()
+    if not awareness:
+        return
+    for _, state in awareness.states.items():
+        _username = state.get("user", {}).get("username", None)
+        if(username and username != _username):
+            continue
+        
+        if active_notebook := state.get("current"):
+            return active_notebook.replace("notebook:", "")
+        
+def _get_active_cell_id_from_ydoc(ydoc: YNotebook, username: Optional[str] = None) -> Optional[str]:
+    """Internal helper: Returns the active cell id from a ydoc instance
+
+    Args:
+        ydoc: The YNotebook instance
+        username: Optional username to return a specific user's active cell
+
+    Returns:
+        The active cell ID for the notebook, or None if no active cell found
+    """
+    if not ydoc or not ydoc.awareness:
+        return None
+
+    awareness_states = ydoc.awareness.states
+    for _, state in awareness_states.items():
+        _username = state.get("user", {}).get("username", None)
+        if(username and username != _username):
+            continue
+
+        if active_cell_id := state.get("activeCellId"):
+            return active_cell_id
+
+    return None
+
+
+async def get_active_cell_id(notebook_path: str, username: Optional[str] = None) -> Optional[str]:
+    """Returns the active cell id
+
+    Args:
+        notebook_path: Path to the notebook file
+        username: Optional username to return a specific user's active cell
+
+    Returns:
+        The active cell ID for the notebook, or None if no active cell found
+    """
+    file_path = normalize_filepath(notebook_path)
+    file_id = await get_file_id(file_path)
+    ydoc = await get_jupyter_ydoc(file_id)
+
+    return _get_active_cell_id_from_ydoc(ydoc, username)
+
+
+async def select_cell(cell_id: str, username: Optional[str] = None) -> dict:
+    """
+    Selects a cell in the active notebook by navigating to it using cursor movements.
+
+    This function finds the target cell by ID and navigates to it from the currently
+    active cell using select_cell_above or select_cell_below commands.
+
+    Args:
+        cell_id: The UUID of the cell to select, or a numeric index as string
+        username: Optional username to get the active cell for that specific user
+
+    Returns:
+        dict: A dictionary containing the response from the last cursor movement
+
+    Raises:
+        ValueError: If the cell_id is not found in the notebook
+        RuntimeError: If there is no active notebook or notebook is not currently open
+    """
+    from jupyterlab_commands_toolkit.tools import execute_command
+
+    try:
+        # Get the active notebook path
+        file_path = await get_active_notebook(username)
+        if not file_path:
+            raise RuntimeError(
+                "No active notebook found. Please open a notebook first."
+            )
+
+        # Resolve cell_id in case it's an index
+        resolved_cell_id = await _resolve_cell_id(file_path, cell_id)
+
+        # Get the YDoc for the notebook
+        file_id = await get_file_id(file_path)
+        ydoc = await get_jupyter_ydoc(file_id)
+
+        if not ydoc:
+            raise RuntimeError(f"Notebook at {file_path} is not currently open")
+
+        # Get the target cell index
+        target_cell_index = _get_cell_index_from_id_ydoc(ydoc, resolved_cell_id)
+        if target_cell_index is None:
+            raise ValueError(f"Cell with ID {cell_id} not found in notebook")
+
+        # Get the currently active cell ID and index
+        active_cell_id = _get_active_cell_id_from_ydoc(ydoc, username)
+        if not active_cell_id:
+            # If no active cell, we can't navigate - the notebook might need to be focused first
+            raise RuntimeError(
+                "No active cell found. Make sure the notebook is focused."
+            )
+
+        active_cell_index = _get_cell_index_from_id_ydoc(ydoc, active_cell_id)
+        if active_cell_index is None:
+            raise RuntimeError(f"Active cell {active_cell_id} not found in notebook")
+
+        # Calculate the distance and direction to move
+        distance = target_cell_index - active_cell_index
+
+        # If already at the target cell, no need to move
+        if distance == 0:
+            return {"success": True, "result": "Already at target cell"}
+
+        # Navigate to the target cell
+        result = None
+        if distance > 0:
+            # Move down
+            for _ in range(distance):
+                result = await execute_command("notebook:move-cursor-down")
+        else:
+            # Move up
+            for _ in range(abs(distance)):
+                result = await execute_command("notebook:move-cursor-up")
+
+        return result
+
+    except Exception:
+        raise
 
 async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
     """Edits the content of a notebook cell with the specified ID
@@ -913,59 +1055,6 @@ async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
 
     except Exception:
         raise
-
-
-# Note: This is currently failing with server outputs, use `read_cell` instead
-def read_cell_nbformat(file_path: str, cell_id: str) -> Dict[str, Any]:
-    """Returns the content and metadata of a cell with the specified ID.
-
-    This function reads a specific cell from a Jupyter notebook file using the nbformat
-    library and returns the cell's content and metadata.
-
-    Note: This function is currently not functioning properly with server outputs.
-    Use `read_cell` instead.
-
-    Args:
-        file_path:
-            The relative path to the notebook file on the filesystem.
-        cell_id:
-            The UUID of the cell to read.
-
-    Returns:
-        The cell as a dictionary containing its content and metadata.
-
-    Raises:
-        ValueError: If no cell with the given ID is found.
-    """
-    file_path = normalize_filepath(file_path)
-    with open(file_path, "r", encoding="utf-8") as f:
-        notebook = nbformat.read(f, as_version=nbformat.NO_CONVERT)
-
-    cell_index = _get_cell_index_from_id_nbformat(notebook, cell_id)
-    if cell_index is not None:
-        cell = notebook.cells[cell_index]
-        return cell
-    else:
-        raise ValueError(f"Cell with {cell_id=} not found in notebook at {file_path=}")
-
-
-def _get_cell_index_from_id_json(notebook_json, cell_id: str) -> int | None:
-    """Get cell index from cell_id by notebook json dict.
-
-    Args:
-        notebook_json:
-            The notebook as a JSON dictionary.
-        cell_id:
-            The UUID of the cell to find.
-
-    Returns:
-        The index of the cell in the notebook, or None if not found.
-    """
-    for i, cell in enumerate(notebook_json["cells"]):
-        if "id" in cell and cell["id"] == cell_id:
-            return i
-    return None
-
 
 def _get_cell_index_from_id_ydoc(ydoc, cell_id: str) -> int | None:
     """Get cell index from cell_id using YDoc interface.
@@ -1084,4 +1173,7 @@ toolkit = [
     delete_cell,
     edit_cell,
     create_notebook,
+    get_active_notebook,
+    get_active_cell_id,
+    select_cell
 ]
