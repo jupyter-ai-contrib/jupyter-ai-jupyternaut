@@ -182,10 +182,14 @@ class JupyternautPersona(BasePersona):
         """
         Returns the system prompt, including attachments as a string.
         """
+
+        context = self.process_attachments(message) or ""
+        context = f"User's username is '{message.sender}'\n\n" + context
+
         system_msg_args = JupyternautSystemPromptArgs(
             model_id=model_id,
             persona_name=self.name,
-            context=self.process_attachments(message),
+            context=context,
         ).model_dump()
 
         return JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args)
