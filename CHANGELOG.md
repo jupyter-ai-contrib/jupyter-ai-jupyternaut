@@ -2,6 +2,22 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.6
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.5...e3790311e775e2adf7e18fd89c1cec5b109daf3e))
+
+### Bugs fixed
+
+- include api_base in config parameters REST API [#22](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/22) ([@minrk](https://github.com/minrk))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-05&to=2025-11-24&type=c))
+
+[@minrk](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Aminrk+updated%3A2025-11-05..2025-11-24&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.5
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.4...a9ab819eb3def728acc088b3be8b6fe80ded09b4))
@@ -15,8 +31,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-03&to=2025-11-05&type=c))
 
 [@brichet](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2025-11-03..2025-11-05&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.4
 
