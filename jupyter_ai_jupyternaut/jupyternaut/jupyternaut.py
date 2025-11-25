@@ -7,11 +7,8 @@ from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
-from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
-from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.messages import ToolMessage
 from langchain.tools.tool_node import ToolCallRequest
-from langchain_core.messages import ToolMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Command
 
@@ -26,9 +23,11 @@ from .toolkits.code_execution import toolkit as exec_toolkit
 
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
-JUPYTERNAUT_AVATAR_PATH = str(os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../static", "jupyternaut.svg")
-))
+JUPYTERNAUT_AVATAR_PATH = str(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../static", "jupyternaut.svg")
+    )
+)
 
 
 def format_tool_args_compact(args_dict, threshold=25):
@@ -50,7 +49,7 @@ def format_tool_args_compact(args_dict, threshold=25):
 
     for key, value in args_dict.items():
         value_str = str(value)
-        lines = value_str.split('\n')
+        lines = value_str.split("\n")
 
         if len(lines) <= threshold:
             if len(lines) == 1 and len(value_str) > 80:
@@ -60,7 +59,7 @@ def format_tool_args_compact(args_dict, threshold=25):
             else:
                 # Add indentation for multi-line values
                 if len(lines) > 1:
-                    indented_value = '\n    '.join([''] + lines)
+                    indented_value = "\n    ".join([""] + lines)
                     formatted_pairs.append(f"  {key}:{indented_value}")
                 else:
                     formatted_pairs.append(f"  {key}: {value_str}")
@@ -68,8 +67,10 @@ def format_tool_args_compact(args_dict, threshold=25):
             # Truncate and add summary
             truncated_lines = lines[:threshold]
             remaining_lines = len(lines) - threshold
-            indented_value = '\n    '.join([''] + truncated_lines)
-            formatted_pairs.append(f"  {key}:{indented_value}\n    [+{remaining_lines} more lines]")
+            indented_value = "\n    ".join([""] + truncated_lines)
+            formatted_pairs.append(
+                f"  {key}:{indented_value}\n    [+{remaining_lines} more lines]"
+            )
 
     return "{\n" + ",\n".join(formatted_pairs) + "\n}"
 
@@ -84,7 +85,7 @@ class ToolMonitoringMiddleware(AgentMiddleware):
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
-        args = format_tool_args_compact(request.tool_call['args'])
+        args = format_tool_args_compact(request.tool_call["args"])
         self.log.info(f"{request.tool_call['name']}({args})")
 
         try:
@@ -115,6 +116,10 @@ class JupyternautPersona(BasePersona):
             system_prompt="...",
         )
 
+    @property
+    def yroom_manager(self):
+        return self.parent.serverapp.web_app.settings["yroom_manager"]
+
     async def get_memory_store(self):
         if not hasattr(self, "_memory_store"):
             conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
@@ -130,7 +135,7 @@ class JupyternautPersona(BasePersona):
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
-  
+
         return create_agent(
             model,
             system_prompt=system_prompt,
@@ -158,18 +163,20 @@ class JupyternautPersona(BasePersona):
             model_id=model_id, model_args=model_args, system_prompt=system_prompt
         )
 
+        context = {
+            "thread_id": self.ychat.get_id(),
+            "username": message.sender
+        }
+
         async def create_aiter():
             async for token, metadata in agent.astream(
                 {"messages": [{"role": "user", "content": message.body}]},
-                {"configurable": {"thread_id": self.ychat.get_id()}},
+                {"configurable": context},
                 stream_mode="messages",
             ):
                 node = metadata["langgraph_node"]
                 content_blocks = token.content_blocks
-                if (
-                    node == "model"
-                    and content_blocks
-                ):
+                if node == "model" and content_blocks:
                     if token.text:
                         yield token.text
 
@@ -195,6 +202,6 @@ class JupyternautPersona(BasePersona):
         return JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args)
 
     def shutdown(self):
-        if hasattr(self,"_memory_store"):
+        if hasattr(self, "_memory_store"):
             self.parent.event_loop.create_task(self._memory_store.conn.close())
         super().shutdown()
