@@ -1,5 +1,6 @@
 import asyncio
 import difflib
+from functools import lru_cache
 import json
 import os
 import re
@@ -863,13 +864,42 @@ def _safe_set_cursor(
         # Cursor positioning is a visual enhancement, not critical functionality
         pass
 
+async def get_open_documents(username: Optional[str] = None) -> Optional[List[str]]:
+    """
+    Returns all open documents for the user, excluding chat files.
+
+    Args:
+        username: Optional username to return a specific user's open documents
+
+    Returns:
+        List of file paths for all open documents (excluding .chat files).
+        If username is provided, then returns the open documents for that specific user.
+        Returns None if no documents are found or awareness is unavailable.
+    """
+    awareness = await get_global_awareness()
+    if not awareness:
+        return None
+
+    for _, state in awareness.states.items():
+        _username = state.get("user", {}).get("username", None)
+        if username and username != _username:
+            continue
+
+        if documents := state.get("documents"):
+            # Filter out .chat files as they're internal to the chat UI
+            filtered_documents = [doc for doc in documents if not doc.endswith('.chat')]
+            return filtered_documents if filtered_documents else None
+
+    return None
+
+
 async def get_active_notebook(username: Optional[str] = None) -> Optional[str]:
     """
     Returns path for the currently active notebook.
-    
+
     Args:
         username: Optional username to return a specific user's active notebook
-    
+
     Returns:
         File path for the first active notebook. If username is provided, then
         returns the active notebook for that specific user.
@@ -881,9 +911,15 @@ async def get_active_notebook(username: Optional[str] = None) -> Optional[str]:
         _username = state.get("user", {}).get("username", None)
         if(username and username != _username):
             continue
-        
-        if active_notebook := state.get("current"):
+
+        if (active_notebook := state.get("current")) and "notebook" in active_notebook:
             return active_notebook.replace("notebook:", "")
+
+        if documents := state.get("documents"):
+            notebooks = [doc for doc in documents if doc.endswith('.ipynb')]
+            # if only one notebook is open, return it
+            if len(notebooks) == 1:
+                return notebooks[0]
         
 def _get_active_cell_id_from_ydoc(ydoc: YNotebook, username: Optional[str] = None) -> Optional[str]:
     """Internal helper: Returns the active cell id from a ydoc instance
@@ -1036,7 +1072,8 @@ async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
             cell_index = _get_cell_index_from_id_ydoc(ydoc, resolved_cell_id)
             if cell_index is not None:
                 ycell = ydoc._ycells[cell_index]
-                await write_to_cell_collaboratively(ydoc, ycell, content)
+                #await write_to_cell_collaboratively(ydoc, ycell, content)
+                ycell["source"] = content
             else:
                 raise ValueError(f"Cell with {cell_id=} not found in notebook")
         else:
@@ -1071,7 +1108,7 @@ def _get_cell_index_from_id_ydoc(ydoc, cell_id: str) -> int | None:
     try:
         cell_index, _ = ydoc.find_cell(cell_id)
         return cell_index
-    except (AttributeError, KeyError):
+    except (AttributeError, KeyError, IndexError):
         return None
 
 
@@ -1119,6 +1156,36 @@ def _determine_insert_index(
         insert_index = cell_index if add_above else cell_index + 1
     return insert_index
 
+@lru_cache(maxsize=1)
+def list_available_kernelspecs():
+    """
+    Lists all available Jupyter kernels and their details.
+    """
+
+    from jupyter_client.kernelspec import KernelSpecManager
+
+    ksm = KernelSpecManager()
+    kernels = ksm.find_kernel_specs()
+    
+    specs = []
+
+    for kernel_name, _ in kernels.items():
+        try:
+            spec = ksm.get_kernel_spec(kernel_name)
+            specs.append({
+                "name": kernel_name,
+                "display_name": spec.display_name,
+                "language": spec.language,
+            })
+        except Exception:
+            # fallback
+            specs = [{
+                "name": "python3",
+                "display_name": "Python 3 (ipykernel)",
+                "language": "python",
+            }]
+
+    return specs
 
 async def create_notebook(file_path: str) -> str:
     """Creates a new empty Jupyter notebook at the specified file path.
@@ -1149,12 +1216,10 @@ async def create_notebook(file_path: str) -> str:
         # Create a new empty notebook
         notebook = nbformat.v4.new_notebook()
 
+        kernelspecs = list_available_kernelspecs()
+
         notebook["metadata"] = {
-            "kernelspec": {
-                "name": "python3",
-                "display_name": "Python 3",
-                "language": "python",
-            }
+            "kernelspec": kernelspecs[0]
         }
 
         # Write the notebook to the file
@@ -1175,5 +1240,6 @@ toolkit = [
     create_notebook,
     get_active_notebook,
     get_active_cell_id,
+    get_open_documents,
     select_cell
 ]
