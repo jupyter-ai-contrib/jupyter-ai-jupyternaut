@@ -1,16 +1,12 @@
 import os
-from typing import Any, Callable
+from typing import Any
 
 import aiosqlite
 from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentMiddleware
-from langchain.messages import ToolMessage
-from langchain.tools.tool_node import ToolCallRequest
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-from langgraph.types import Command
 
 from .chat_models import ChatLiteLLM
 from .prompt_template import (
@@ -28,75 +24,6 @@ JUPYTERNAUT_AVATAR_PATH = str(
         os.path.join(os.path.dirname(__file__), "../static", "jupyternaut.svg")
     )
 )
-
-
-def format_tool_args_compact(args_dict, threshold=25):
-    """
-    Create a more compact string representation of tool call args.
-    Each key-value pair is on its own line for better readability.
-
-    Args:
-        args_dict (dict): Dictionary of tool arguments
-        threshold (int): Maximum number of lines before truncation (default: 25)
-
-    Returns:
-        str: Formatted string representation of arguments
-    """
-    if not args_dict:
-        return "{}"
-
-    formatted_pairs = []
-
-    for key, value in args_dict.items():
-        value_str = str(value)
-        lines = value_str.split("\n")
-
-        if len(lines) <= threshold:
-            if len(lines) == 1 and len(value_str) > 80:
-                # Single long line - truncate
-                truncated = value_str[:77] + "..."
-                formatted_pairs.append(f"  {key}: {truncated}")
-            else:
-                # Add indentation for multi-line values
-                if len(lines) > 1:
-                    indented_value = "\n    ".join([""] + lines)
-                    formatted_pairs.append(f"  {key}:{indented_value}")
-                else:
-                    formatted_pairs.append(f"  {key}: {value_str}")
-        else:
-            # Truncate and add summary
-            truncated_lines = lines[:threshold]
-            remaining_lines = len(lines) - threshold
-            indented_value = "\n    ".join([""] + truncated_lines)
-            formatted_pairs.append(
-                f"  {key}:{indented_value}\n    [+{remaining_lines} more lines]"
-            )
-
-    return "{\n" + ",\n".join(formatted_pairs) + "\n}"
-
-
-class ToolMonitoringMiddleware(AgentMiddleware):
-    def __init__(self, *, persona: BasePersona):
-        self.stream_message = persona.stream_message
-        self.log = persona.log
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
-        args = format_tool_args_compact(request.tool_call["args"])
-        self.log.info(f"{request.tool_call['name']}({args})")
-
-        try:
-            result = await handler(request)
-            self.log.info(f"{request.tool_call['name']} Done!")
-            return result
-        except Exception as e:
-            self.log.info(f"{request.tool_call['name']} failed: {e}")
-            return ToolMessage(
-                tool_call_id=request.tool_call["id"], status="error", content=f"{e}"
-            )
 
 
 class JupyternautPersona(BasePersona):
