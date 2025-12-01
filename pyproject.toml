@@ -46,7 +46,8 @@ dependencies = [
     "langgraph-checkpoint-sqlite>=3.0.0",
     "aiosqlite>=0.20",
     "jupyter_server_documents>=0.1.0a8",
-    "jupyterlab-commands-toolkit>=0.1.2"
+    "jupyterlab-commands-toolkit>=0.1.2",
+    "jupyterlab-notebook-awareness>=0.2.0",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
