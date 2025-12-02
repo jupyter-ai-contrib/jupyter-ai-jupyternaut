@@ -2,6 +2,23 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.7
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.6...11d3208c551ba316383d4377cb283e208744d657))
+
+### Enhancements made
+
+- Fix agent errors [#24](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/24) ([@3coins](https://github.com/3coins))
+- Improve tools [#21](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/21) ([@3coins](https://github.com/3coins))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-24&to=2025-12-02&type=c))
+
+[@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-11-24..2025-12-02&type=Issues) | [@dlqqq](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2025-11-24..2025-12-02&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.6
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.5...e3790311e775e2adf7e18fd89c1cec5b109daf3e))
@@ -15,8 +32,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-05&to=2025-11-24&type=c))
 
 [@minrk](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Aminrk+updated%3A2025-11-05..2025-11-24&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.5
 
