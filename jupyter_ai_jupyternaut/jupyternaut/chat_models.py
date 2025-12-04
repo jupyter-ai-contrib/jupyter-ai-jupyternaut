@@ -343,7 +343,17 @@ class ChatLiteLLM(BaseChatModel):
 
         @retry_decorator
         async def _completion_with_retry(**kwargs: Any) -> Any:
-            return await self.client.acompletion(**kwargs)
+            return await self.client.acompletion(
+                **kwargs,
+                # Enables ephemeral prompt caching of the last system message by
+                # default.
+                cache_control_injection_points=[
+                    {
+                        "location": "message",
+                        "role": "system",
+                    }
+                ],
+            )
 
         return await _completion_with_retry(**kwargs)
 
