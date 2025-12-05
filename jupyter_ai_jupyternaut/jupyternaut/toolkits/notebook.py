@@ -1072,8 +1072,7 @@ async def edit_cell(file_path: str, cell_id: str, content: str) -> None:
             cell_index = _get_cell_index_from_id_ydoc(ydoc, resolved_cell_id)
             if cell_index is not None:
                 ycell = ydoc._ycells[cell_index]
-                #await write_to_cell_collaboratively(ydoc, ycell, content)
-                ycell["source"] = content
+                await write_to_cell_collaboratively(ydoc, ycell, content)
             else:
                 raise ValueError(f"Cell with {cell_id=} not found in notebook")
         else:
