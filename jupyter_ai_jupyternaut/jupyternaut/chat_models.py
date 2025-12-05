@@ -344,18 +344,29 @@ class ChatLiteLLM(BaseChatModel):
         """Use tenacity to retry the async completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
+        # Enables ephemeral prompt caching of the last system message by
+        # default when passed to `litellm.acompletion()`.
+        #
+        # See: https://docs.litellm.ai/docs/tutorials/prompt_caching
+        cache_control_kwargs = {
+            "cache_control_injection_points": [
+                { "location": "message", "role": "system" }
+            ]
+        }
+
+        # Disable ephemeral prompt caching on Amazon Bedrock when the
+        # InvokeModel API is used instead of Converse API. This is motivated by
+        # an upstream bug in LiteLLM that has yet to be patched.
+        #
+        # See: github.com/BerriAI/litellm/issues/17479
+        if self.model.startswith("bedrock/") and not self.model.startswith("bedrock/converse/"):
+            cache_control_kwargs = {}
+
         @retry_decorator
         async def _completion_with_retry(**kwargs: Any) -> Any:
             return await self.client.acompletion(
                 **kwargs,
-                # Enables ephemeral prompt caching of the last system message by
-                # default.
-                cache_control_injection_points=[
-                    {
-                        "location": "message",
-                        "role": "system",
-                    }
-                ],
+                **cache_control_kwargs,
             )
 
         return await _completion_with_retry(**kwargs)
