@@ -2,6 +2,26 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.8
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.7...1404b388e96f14737531a2270f88b08138421759))
+
+### Enhancements made
+
+- Enable ephemeral prompt caching with LangSmith metrics [#28](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/28) ([@dlqqq](https://github.com/dlqqq))
+
+### Bugs fixed
+
+- Fix `edit_cell()` tool [#29](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/29) ([@dlqqq](https://github.com/dlqqq))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-12-02&to=2025-12-06&type=c))
+
+[@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-12-02..2025-12-06&type=Issues) | [@dlqqq](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2025-12-02..2025-12-06&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.7
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.6...11d3208c551ba316383d4377cb283e208744d657))
@@ -16,8 +36,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-11-24&to=2025-12-02&type=c))
 
 [@3coins](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-11-24..2025-12-02&type=Issues) | [@dlqqq](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2025-11-24..2025-12-02&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.6
 
