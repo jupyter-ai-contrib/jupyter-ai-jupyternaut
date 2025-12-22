@@ -116,6 +116,12 @@
                 }
             }
         },
+        "sharedPackages": {
+            "@jupyter/chat": {
+                "singleton": true,
+                "bundled": false
+            }
+        },
         "extension": true,
         "outputDir": "jupyter_ai_jupyternaut/labextension",
         "schemaDir": "schema"
