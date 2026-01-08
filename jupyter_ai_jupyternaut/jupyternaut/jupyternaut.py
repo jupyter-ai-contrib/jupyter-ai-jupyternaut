@@ -6,6 +6,8 @@ from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
+from langchain.agents.middleware import wrap_tool_call
+from langchain.messages import ToolMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from .chat_models import ChatLiteLLM
@@ -25,6 +27,21 @@ JUPYTERNAUT_AVATAR_PATH = str(
     )
 )
 
+@wrap_tool_call
+async def handle_tool_errors(request, handler):
+    """
+    LangChain middleware that catches exceptions raised by tools & returns a
+    `ToolMessage` object to allow the agent to resume execution.
+    """
+
+    try:
+        return await handler(request)
+    except Exception as e:
+        # Return a custom error message to the model
+        return ToolMessage(
+            content=f"Tool error: Please check your input and try again. ({str(e)})",
+            tool_call_id=request.tool_call["id"]
+        )
 
 class JupyternautPersona(BasePersona):
     """
@@ -68,6 +85,7 @@ class JupyternautPersona(BasePersona):
             system_prompt=system_prompt,
             checkpointer=memory_store,
             tools=self.get_tools(),
+            middleware=[handle_tool_errors],
         )
 
     async def process_message(self, message: Message) -> None:
