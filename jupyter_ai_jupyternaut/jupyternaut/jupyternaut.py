@@ -27,22 +27,6 @@ JUPYTERNAUT_AVATAR_PATH = str(
     )
 )
 
-@wrap_tool_call
-async def handle_tool_errors(request, handler):
-    """
-    LangChain middleware that catches exceptions raised by tools & returns a
-    `ToolMessage` object to allow the agent to resume execution.
-    """
-
-    try:
-        return await handler(request)
-    except Exception as e:
-        # Return a custom error message to the model
-        return ToolMessage(
-            content=f"Tool error: Please check your input and try again. ({str(e)})",
-            tool_call_id=request.tool_call["id"]
-        )
-
 class JupyternautPersona(BasePersona):
     """
     The Jupyternaut persona, the main persona provided by Jupyter AI.
@@ -76,6 +60,28 @@ class JupyternautPersona(BasePersona):
         tools += exec_toolkit
         return tools
 
+    def _create_tool_error_handler(self):
+        """Creates a tool error handler with access to instance attributes."""
+        @wrap_tool_call
+        async def handle_tool_errors(request, handler):
+            """
+            LangChain middleware that catches exceptions raised by tools & returns a
+            `ToolMessage` object to allow the agent to resume execution.
+            """
+            try:
+                return await handler(request)
+            except Exception as e:
+                # Log the exception
+                self.log.exception("Tool call raised an exception.")
+
+                # Return a custom error message to the model
+                return ToolMessage(
+                    content=f"Tool error: Please check your input and try again. ({str(e)})",
+                    tool_call_id=request.tool_call["id"]
+                )
+
+        return handle_tool_errors
+
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
@@ -85,7 +91,7 @@ class JupyternautPersona(BasePersona):
             system_prompt=system_prompt,
             checkpointer=memory_store,
             tools=self.get_tools(),
-            middleware=[handle_tool_errors],
+            middleware=[self._create_tool_error_handler()],
         )
 
     async def process_message(self, message: Message) -> None:
