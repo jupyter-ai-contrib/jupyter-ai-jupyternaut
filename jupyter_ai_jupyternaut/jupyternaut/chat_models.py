@@ -644,8 +644,8 @@ def _create_usage_metadata(usage: Usage) -> UsageMetadata:
     output_reasoning_tokens = usage.completion_tokens_details.reasoning_tokens or 0
     total_tokens = input_tokens + output_tokens
 
-    cache_creation_tokens = usage.prompt_tokens_details.cache_creation_tokens or 0
-    cache_read_tokens = usage.prompt_tokens_details.cached_tokens or 0
+    cache_creation_tokens = getattr(usage.prompt_tokens_details, 'cache_creation_tokens', 0)
+    cache_read_tokens = getattr(usage.prompt_tokens_details,'cached_tokens',0)
 
     return UsageMetadata(
         input_tokens=input_tokens,
