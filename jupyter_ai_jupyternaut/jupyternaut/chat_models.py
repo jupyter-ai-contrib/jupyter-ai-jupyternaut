@@ -645,8 +645,8 @@ def _create_usage_metadata(usage: Usage) -> UsageMetadata:
     completion_details = usage.completion_tokens_details
 
     input_audio_tokens = (prompt_details.audio_tokens or 0) if prompt_details else 0
-    cache_creation_tokens = getattr(prompt_details, 'cache_creation_tokens', 0) if prompt_details else 0
-    cache_read_tokens = getattr(prompt_details, 'cached_tokens', 0) if prompt_details else 0
+    cache_creation_tokens = (getattr(prompt_details, 'cache_creation_tokens', 0) or 0) if prompt_details else 0
+    cache_read_tokens = (getattr(prompt_details, 'cached_tokens', 0) or 0) if prompt_details else 0
 
     output_audio_tokens = (completion_details.audio_tokens or 0) if completion_details else 0
     output_reasoning_tokens = (completion_details.reasoning_tokens or 0) if completion_details else 0
