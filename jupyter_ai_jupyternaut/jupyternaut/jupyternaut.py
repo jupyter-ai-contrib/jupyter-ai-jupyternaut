@@ -4,7 +4,7 @@ from typing import Any
 import aiosqlite
 from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
 from jupyter_core.paths import jupyter_data_dir
-from jupyterlab_chat.models import Message
+from jupyterlab_chat.models import Message, TokenUsage
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_tool_call
 from langchain.messages import ToolMessage
@@ -97,8 +97,8 @@ class JupyternautPersona(BasePersona):
     async def process_message(self, message: Message) -> None:
         if not hasattr(self, "config_manager"):
             self.send_message(
-                "Jupyternaut requires the `jupyter_ai_jupyternaut` server extension package.\n\n",
-                "Please make sure to first install that package in your environment & restart the server.",
+                "Jupyternaut requires the `jupyter_ai_jupyternaut` server extension package.\n\n"
+                "Please make sure to first install that package in your environment & restart the server."
             )
         if not self.config_manager.chat_model:
             self.send_message(
@@ -119,7 +119,15 @@ class JupyternautPersona(BasePersona):
             "username": message.sender
         }
 
+        # Track token usage
+        usage_data = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0
+        }
+
         async def create_aiter():
+            nonlocal usage_data
             async for token, metadata in agent.astream(
                 {"messages": [{"role": "user", "content": message.body}]},
                 {"configurable": context},
@@ -127,12 +135,38 @@ class JupyternautPersona(BasePersona):
             ):
                 node = metadata["langgraph_node"]
                 content_blocks = token.content_blocks
+
+                # Extract usage information if available
+                if hasattr(token, "usage_metadata") and token.usage_metadata:
+                    usage_metadata = token.usage_metadata
+                    usage_data["input_tokens"] = usage_metadata.get("input_tokens", usage_data["input_tokens"])
+                    usage_data["output_tokens"] = usage_metadata.get("output_tokens", usage_data["output_tokens"])
+                    usage_data["total_tokens"] = usage_metadata.get("total_tokens", usage_data["total_tokens"])
+
                 if node == "model" and content_blocks:
                     if token.text:
                         yield token.text
 
         response_aiter = create_aiter()
+
+        # Stream the message
         await self.stream_message(response_aiter)
+
+        # After streaming, add usage if we captured any
+        if usage_data["total_tokens"] > 0:
+            usage = TokenUsage(
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"],
+                model=model_id
+            )
+            # Update the last message with usage information
+            messages = self.ychat.get_messages()
+            if messages:
+                last_msg = messages[-1]
+                if last_msg.sender == self.id and not last_msg.usage:
+                    last_msg.usage = usage
+                    self.ychat.update_message(last_msg)
 
     def get_system_prompt(
         self, model_id: str, message: Message
