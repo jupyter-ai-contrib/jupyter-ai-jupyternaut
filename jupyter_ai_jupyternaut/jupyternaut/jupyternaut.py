@@ -100,6 +100,7 @@ class JupyternautPersona(BasePersona):
                 "Jupyternaut requires the `jupyter_ai_jupyternaut` server extension package.\n\n",
                 "Please make sure to first install that package in your environment & restart the server.",
             )
+            return
         if not self.config_manager.chat_model:
             self.send_message(
                 "No chat model is configured.\n\n"
@@ -107,32 +108,36 @@ class JupyternautPersona(BasePersona):
             )
             return
 
-        model_id = self.config_manager.chat_model
-        model_args = self.config_manager.chat_model_args
-        system_prompt = self.get_system_prompt(model_id=model_id, message=message)
-        agent = await self.get_agent(
-            model_id=model_id, model_args=model_args, system_prompt=system_prompt
-        )
+        try:
+            model_id = self.config_manager.chat_model
+            model_args = self.config_manager.chat_model_args
+            system_prompt = self.get_system_prompt(model_id=model_id, message=message)
+            agent = await self.get_agent(
+                model_id=model_id, model_args=model_args, system_prompt=system_prompt
+            )
 
-        context = {
-            "thread_id": self.ychat.get_id(),
-            "username": message.sender
-        }
+            context = {
+                "thread_id": self.ychat.get_id(),
+                "username": message.sender
+            }
 
-        async def create_aiter():
-            async for token, metadata in agent.astream(
-                {"messages": [{"role": "user", "content": message.body}]},
-                {"configurable": context},
-                stream_mode="messages",
-            ):
-                node = metadata["langgraph_node"]
-                content_blocks = token.content_blocks
-                if node == "model" and content_blocks:
-                    if token.text:
-                        yield token.text
+            async def create_aiter():
+                async for token, metadata in agent.astream(
+                    {"messages": [{"role": "user", "content": message.body}]},
+                    {"configurable": context},
+                    stream_mode="messages",
+                ):
+                    node = metadata["langgraph_node"]
+                    content_blocks = token.content_blocks
+                    if node == "model" and content_blocks:
+                        if token.text:
+                            yield token.text
 
-        response_aiter = create_aiter()
-        await self.stream_message(response_aiter)
+            response_aiter = create_aiter()
+            await self.stream_message(response_aiter)
+        except Exception as e:
+            self.log.exception("Error while processing message.")
+            self.send_message(f"Error: {e}")
 
     def get_system_prompt(
         self, model_id: str, message: Message
