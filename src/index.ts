@@ -10,12 +10,10 @@ import {
   MainAreaWidget,
   ICommandPalette
 } from '@jupyterlab/apputils';
-import { IMessageFooterRegistry } from '@jupyter/chat';
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { SingletonLayout, Widget } from '@lumino/widgets';
 
-import { StopButton } from './components/message-footer/stop-button';
 //import { completionPlugin } from './completions';
 import { buildErrorWidget } from './widgets/chat-error';
 import { buildAiSettings } from './widgets/settings-widget';
@@ -128,23 +126,10 @@ const jupyternautSettingsPlugin: JupyterFrontEndPlugin<void> = {
   }
 };
 
-const stopButtonPlugin: JupyterFrontEndPlugin<void> = {
-  id: '@jupyter-ai/jupyternaut:stop-button',
-  autoStart: true,
-  requires: [IMessageFooterRegistry],
-  activate: (app: JupyterFrontEnd, registry: IMessageFooterRegistry) => {
-    registry.addSection({
-      component: StopButton,
-      position: 'center'
-    });
-  }
-};
-
 export default [
   plugin,
   jupyternautSettingsPlugin,
   // webComponentsPlugin,
-  stopButtonPlugin,
   // completionPlugin,
   statusItemPlugin
 ];
