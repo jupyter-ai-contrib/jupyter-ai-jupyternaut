@@ -2,6 +2,35 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.0.10
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.9...4808b8bd1748383baec9a26de35c4a3f75e5c215))
+
+### Enhancements made
+
+- Remove non-functional stop button plugin [#43](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/43) ([@dlqqq](https://github.com/dlqqq), [@andrii-i](https://github.com/andrii-i))
+
+### Bugs fixed
+
+- Add error handling to process_message and fix missing return [#42](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/42) ([@erkin98](https://github.com/erkin98), [@dlqqq](https://github.com/dlqqq))
+- fix: use getattr() for setting audio tokens [#37](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/37) ([@magnuslarsen](https://github.com/magnuslarsen), [@dlqqq](https://github.com/dlqqq))
+- Fix attribute access error on Gemini Flash 3.0 and other models [#35](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/35) ([@subsriram](https://github.com/subsriram), [@dlqqq](https://github.com/dlqqq))
+
+### Maintenance and upkeep improvements
+
+- Bump jupyterlab_chat to 0.19.0 [#39](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/39) ([@brichet](https://github.com/brichet), [@dlqqq](https://github.com/dlqqq))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-01-13&to=2026-03-02&type=c))
+
+@andrii-i ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Aandrii-i+updated%3A2026-01-13..2026-03-02&type=Issues)) | @brichet ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2026-01-13..2026-03-02&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-01-13..2026-03-02&type=Issues)) | @erkin98 ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Aerkin98+updated%3A2026-01-13..2026-03-02&type=Issues)) | @magnuslarsen ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Amagnuslarsen+updated%3A2026-01-13..2026-03-02&type=Issues)) | @subsriram ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asubsriram+updated%3A2026-01-13..2026-03-02&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.9
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.8...b7ffb6b15d2a0ca1e84395b06822585bc0d2d456))
@@ -19,8 +48,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2025-12-06&to=2026-01-13&type=c))
 
 @3coins ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2025-12-06..2026-01-13&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2025-12-06..2026-01-13&type=Issues)) | @moiney ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Amoiney+updated%3A2025-12-06..2026-01-13&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2025-12-06..2026-01-13&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.8
 
