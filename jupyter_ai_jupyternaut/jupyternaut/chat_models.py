@@ -299,27 +299,18 @@ class ChatLiteLLM(BaseChatModel):
         set_model_value = self.model
         if self.model_name is not None:
             set_model_value = self.model_name
-        self.client.api_base = self.api_base
-        self.client.api_key = self.api_key
-        for named_api_key in [
-            "openai_api_key",
-            "azure_api_key",
-            "anthropic_api_key",
-            "replicate_api_key",
-            "cohere_api_key",
-            "openrouter_api_key",
-        ]:
-            if api_key_value := getattr(self, named_api_key):
-                setattr(
-                    self.client,
-                    named_api_key.replace("_api_key", "_key"),
-                    api_key_value,
-                )
-        self.client.organization = self.organization
+        # Pass credentials per-request instead of mutating litellm module
+        # globals. Setting attributes on self.client (which IS the litellm
+        # module) pollutes every subsequent litellm call in the process,
+        # regardless of provider. This breaks providers that rely on
+        # DefaultAzureCredential (e.g. azure_ai/agents/*) because
+        # litellm.openai_key gets picked up as the API key instead.
         creds: Dict[str, Any] = {
             "model": set_model_value,
             "force_timeout": self.request_timeout,
             "api_base": self.api_base,
+            "api_key": self.api_key,
+            "organization": self.organization,
         }
         return {**self._default_params, **creds}
 
