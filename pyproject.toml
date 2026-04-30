@@ -44,6 +44,7 @@ dependencies = [
     "jupyter_ai_persona_manager>=0.0.1",
     "langchain>=1.0.0",
     "langgraph-checkpoint-sqlite>=3.0.0",
+    "langchain_mcp_adapters",
     "aiosqlite>=0.20",
     "jupyter_server_documents>=0.1.0a8",
     "jupyterlab-commands-toolkit>=0.1.2",
