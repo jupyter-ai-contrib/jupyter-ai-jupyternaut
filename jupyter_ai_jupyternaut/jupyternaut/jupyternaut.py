@@ -2,13 +2,23 @@ import os
 from typing import Any
 
 import aiosqlite
-from jupyter_ai_persona_manager import BasePersona, PersonaDefaults, McpServerHttp
+from jupyter_ai_persona_manager import (
+  BasePersona,
+  McpServerHttp,
+  McpServerStdio,
+  PersonaDefaults,
+)
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_tool_call
 from langchain.messages import ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.sessions import (
+  Connection,
+  StreamableHttpConnection,
+  StdioConnection,
+)
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from .chat_models import ChatLiteLLM
@@ -62,14 +72,24 @@ class JupyternautPersona(BasePersona):
 
         # Add MCP tools
         mcp_settings = self.get_mcp_settings()
-        mcp_tools = {}
+        connections: dict[str, Connection] = {}
         for mcp in mcp_settings.mcp_servers:
             if isinstance(mcp, McpServerHttp):
-                mcp_tools[mcp.name] = {
+                connection: StreamableHttpConnection = {
                     "transport": mcp.type,
-                    "url": mcp.url
+                    "url": mcp.url,
+                    "headers": mcp.headers
                 }
-        client = MultiServerMCPClient(mcp_tools)
+                connections[mcp.name] = connection
+            elif isinstance(mcp, McpServerStdio):
+                connection: StdioConnection = {
+                    "transport": "stdio",
+                    "command": mcp.command,
+                    "args": mcp.args,
+                    "env": {var.name: var.value for var in mcp.env}
+                }
+                connections[mcp.name] = connection
+        client = MultiServerMCPClient(connections)
         tools += await client.get_tools()
 
         return tools
