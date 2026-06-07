@@ -10,6 +10,7 @@ from langchain.agents.middleware import wrap_tool_call
 from langchain.messages import ToolMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
+from langchain_ollama import ChatOllama
 from .chat_models import ChatLiteLLM
 from .prompt_template import (
     JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE,
@@ -83,7 +84,15 @@ class JupyternautPersona(BasePersona):
         return handle_tool_errors
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
-        model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
+        if model_id.startswith("ollama/") or model_id.startswith("ollama_chat/"):
+            model_id = model_id.split("/")[1]
+            if "base_url" not in model_args and "api_base" in model_args:
+                model_args["base_url"] = model_args["api_base"]
+            if "num_ctx" not in model_args:
+                model_args["num_ctx"] = 16384
+            model = ChatOllama(**model_args, model=model_id, streaming=True)
+        else:
+            model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
 
         return create_agent(
@@ -122,16 +131,16 @@ class JupyternautPersona(BasePersona):
             }
 
             async def create_aiter():
-                async for token, metadata in agent.astream(
+                stream = await agent.astream_events(
                     {"messages": [{"role": "user", "content": message.body}]},
                     {"configurable": context},
-                    stream_mode="messages",
-                ):
-                    node = metadata["langgraph_node"]
-                    content_blocks = token.content_blocks
-                    if node == "model" and content_blocks:
-                        if token.text:
-                            yield token.text
+                    version="v3"
+                )
+                async for m in stream.messages:
+                    async for delta in m.reasoning:
+                        yield delta
+                    async for delta in m.text:
+                        yield delta
 
             response_aiter = create_aiter()
             await self.stream_message(response_aiter)
