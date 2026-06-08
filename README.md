@@ -35,21 +35,18 @@ pip install jupyter_ai_jupyternaut
 
 ## Optional features
 
-The core package provides Jupyternaut's chat and its tools, keeping conversation
-memory in memory. A few features are available as optional extras, so you can
-install only what you need:
+The core package provides Jupyternaut's chat and notebook tools, keeping
+conversation memory in memory. Persistent conversation memory is available as an
+optional extra:
 
-| Extra         | Enables                                                                                                                                                                              | Without it                                                                                 |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `rtc`         | Live notebook tools — reading/editing notebooks and collaborative awareness — backed by [`jupyter-server-documents`](https://github.com/jupyter-ai-contrib/jupyter-server-documents) | Chat and the other tools still work; the notebook tools report that this extra is required |
-| `persistence` | Conversation memory persisted to a local SQLite database so it survives server restarts (via `langgraph-checkpoint-sqlite`)                                                          | Conversation memory is kept only for the lifetime of the server process                    |
-| `all`         | Both of the extras above                                                                                                                                                             | —                                                                                          |
+| Extra         | Enables                                                                                                             | Without it                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `persistence` | Conversation memory persisted to a local SQLite database so it survives server restarts (via `langgraph-checkpoint-sqlite`) | Conversation memory is kept only for the lifetime of the server process |
+| `all`         | All optional runtime features. Currently this is the same as `persistence`                                          | —                                                                       |
 
 For example:
 
 ```bash
-# the live notebook tools
-pip install "jupyter_ai_jupyternaut[rtc]"
 # persistent conversation memory
 pip install "jupyter_ai_jupyternaut[persistence]"
 # every optional feature

@@ -45,23 +45,16 @@ dependencies = [
     "langchain>=1.0.0",
     # Provides the base checkpointer (`InMemorySaver`) used for in-memory
     # conversation memory. Persistent, SQLite-backed memory is available via the
-    # optional `persistence` extra, and the live notebook tools via the optional
-    # `rtc` extra (see `[project.optional-dependencies]` below).
+    # optional `persistence` extra.
     "langgraph-checkpoint>=2.1.0",
     "langchain_mcp_adapters>=0.2,<0.3",
+    "jupyter_server_documents>=0.1.0a8",
     "jupyterlab-commands-toolkit>=0.1.2",
+    "jupyterlab-notebook-awareness>=0.2.0",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
 [project.optional-dependencies]
-# Real-time collaboration support for Jupyternaut's live notebook tools:
-# server-side document rooms plus frontend active-notebook/cell awareness.
-# Without it, chat and the non-notebook tools still work, but the notebook tools
-# are unavailable.
-rtc = [
-    "jupyter_server_documents>=0.1.0a8",
-    "jupyterlab-notebook-awareness>=0.2.0",
-]
 # Persist conversation memory to a local SQLite database so that it survives
 # server restarts. Without it, Jupyternaut keeps conversation memory only for
 # the lifetime of the server process (in-memory).
@@ -71,7 +64,7 @@ persistence = [
 ]
 # All optional runtime features.
 all = [
-    "jupyter_ai_jupyternaut[rtc,persistence]",
+    "jupyter_ai_jupyternaut[persistence]",
 ]
 test = [
     "coverage",

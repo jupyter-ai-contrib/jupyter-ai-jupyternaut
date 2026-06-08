@@ -18,11 +18,10 @@ def get_serverapp():
 
 
 _RTC_REQUIRED_MESSAGE = (
-    "Jupyternaut's live notebook tools require the optional "
+    "Jupyternaut's live notebook tools require the "
     "`jupyter-server-documents` server extension, which provides the real-time "
-    "collaboration backend. Install it with "
-    "`pip install 'jupyter-ai-jupyternaut[rtc]'` (or "
-    "`conda install jupyter-server-documents`) and restart the Jupyter server."
+    "collaboration backend. Make sure `jupyter-server-documents` is installed "
+    "and enabled, then restart the Jupyter server."
 )
 
 
@@ -30,8 +29,8 @@ def _require_web_app_setting(serverapp, key: str):
     """Returns ``serverapp.web_app.settings[key]``.
 
     Raises a ``RuntimeError`` with an actionable message if the setting is
-    missing, which happens when the optional real-time collaboration backend
-    (`jupyter-server-documents`) is not installed.
+    missing, which happens when the real-time collaboration backend
+    (`jupyter-server-documents`) is not installed or enabled.
     """
     try:
         return serverapp.web_app.settings[key]
