@@ -57,10 +57,6 @@ class JupyternautPersona(BasePersona):
             system_prompt="...",
         )
 
-    @property
-    def yroom_manager(self):
-        return self.parent.serverapp.web_app.settings["yroom_manager"]
-
     async def get_memory_store(self):
         """
         Returns the checkpointer used to persist Jupyternaut's conversation
