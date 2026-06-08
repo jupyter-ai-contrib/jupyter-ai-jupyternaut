@@ -39,11 +39,11 @@ The core package provides Jupyternaut's chat and its tools, keeping conversation
 memory in memory. A few features are available as optional extras, so you can
 install only what you need:
 
-| Extra | Enables | Without it |
-| --- | --- | --- |
-| `rtc` | Live notebook tools — reading/editing notebooks and collaborative awareness — backed by [`jupyter-server-documents`](https://github.com/jupyter-ai-contrib/jupyter-server-documents) | Chat and the other tools still work; the notebook tools report that this extra is required |
-| `persistence` | Conversation memory persisted to a local SQLite database so it survives server restarts (via `langgraph-checkpoint-sqlite`) | Conversation memory is kept only for the lifetime of the server process |
-| `all` | Both of the extras above | — |
+| Extra         | Enables                                                                                                                                                                              | Without it                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `rtc`         | Live notebook tools — reading/editing notebooks and collaborative awareness — backed by [`jupyter-server-documents`](https://github.com/jupyter-ai-contrib/jupyter-server-documents) | Chat and the other tools still work; the notebook tools report that this extra is required |
+| `persistence` | Conversation memory persisted to a local SQLite database so it survives server restarts (via `langgraph-checkpoint-sqlite`)                                                          | Conversation memory is kept only for the lifetime of the server process                    |
+| `all`         | Both of the extras above                                                                                                                                                             | —                                                                                          |
 
 For example:
 
