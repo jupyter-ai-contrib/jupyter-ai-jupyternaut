@@ -50,16 +50,17 @@ dependencies = [
     "langgraph-checkpoint>=2.1.0",
     "langchain_mcp_adapters>=0.2,<0.3",
     "jupyterlab-commands-toolkit>=0.1.2",
-    "jupyterlab-notebook-awareness>=0.2.0",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
 [project.optional-dependencies]
-# Real-time collaboration backend (provides the server-side `yroom_manager`)
-# that powers Jupyternaut's live notebook tools. Without it, chat and the
-# non-notebook tools still work, but the notebook tools are unavailable.
+# Real-time collaboration support for Jupyternaut's live notebook tools:
+# server-side document rooms plus frontend active-notebook/cell awareness.
+# Without it, chat and the non-notebook tools still work, but the notebook tools
+# are unavailable.
 rtc = [
     "jupyter_server_documents>=0.1.0a8",
+    "jupyterlab-notebook-awareness>=0.2.0",
 ]
 # Persist conversation memory to a local SQLite database so that it survives
 # server restarts. Without it, Jupyternaut keeps conversation memory only for
