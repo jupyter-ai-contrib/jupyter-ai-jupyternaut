@@ -39,10 +39,10 @@ The core package provides Jupyternaut's chat and notebook tools, keeping
 conversation memory in memory. Persistent conversation memory is available as an
 optional extra:
 
-| Extra         | Enables                                                                                                             | Without it                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Extra         | Enables                                                                                                                     | Without it                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `persistence` | Conversation memory persisted to a local SQLite database so it survives server restarts (via `langgraph-checkpoint-sqlite`) | Conversation memory is kept only for the lifetime of the server process |
-| `all`         | All optional runtime features. Currently this is the same as `persistence`                                          | —                                                                       |
+| `all`         | All optional runtime features. Currently this is the same as `persistence`                                                  | —                                                                       |
 
 For example:
 
