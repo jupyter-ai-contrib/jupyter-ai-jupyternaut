@@ -1,7 +1,6 @@
 import os
 from typing import Any
 
-import aiosqlite
 from jupyter_ai_persona_manager import (
   BasePersona,
   McpServerHttp,
@@ -19,7 +18,6 @@ from langchain_mcp_adapters.sessions import (
   StreamableHttpConnection,
   StdioConnection,
 )
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from .chat_models import ChatLiteLLM
 from .prompt_template import (
@@ -59,15 +57,39 @@ class JupyternautPersona(BasePersona):
             system_prompt="...",
         )
 
-    @property
-    def yroom_manager(self):
-        return self.parent.serverapp.web_app.settings["yroom_manager"]
-
     async def get_memory_store(self):
+        """
+        Returns the checkpointer used to persist Jupyternaut's conversation
+        memory.
+
+        If the optional ``langgraph-checkpoint-sqlite`` package is installed
+        (e.g. via ``jupyter-ai-jupyternaut[persistence]``), conversation memory
+        is persisted to a local SQLite database so that it survives server
+        restarts. Otherwise, Jupyternaut falls back to an in-memory checkpointer
+        that retains memory only for the lifetime of the server process.
+        """
         if not hasattr(self, "_memory_store"):
-            conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
-            self._memory_store = AsyncSqliteSaver(conn)
+            self._memory_store = await self._create_memory_store()
         return self._memory_store
+
+    async def _create_memory_store(self):
+        try:
+            import aiosqlite
+            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+        except ImportError:
+            from langgraph.checkpoint.memory import InMemorySaver
+
+            self.log.info(
+                "`langgraph-checkpoint-sqlite` is not installed; Jupyternaut "
+                "will use in-memory conversation memory that is not persisted "
+                "across server restarts. Install "
+                "`jupyter-ai-jupyternaut[persistence]` to enable persistent "
+                "memory."
+            )
+            return InMemorySaver()
+
+        conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
+        return AsyncSqliteSaver(conn)
 
     async def get_tools(self):
         tools = nb_toolkit
@@ -208,6 +230,10 @@ class JupyternautPersona(BasePersona):
         return JUPYTERNAUT_SYSTEM_PROMPT_TEMPLATE.render(**system_msg_args)
 
     async def shutdown(self):
-        if hasattr(self, "_memory_store"):
-            self.parent.event_loop.create_task(self._memory_store.conn.close())
+        # Only the SQLite-backed checkpointer holds an open connection that needs
+        # to be closed; the in-memory fallback does not.
+        memory_store = getattr(self, "_memory_store", None)
+        conn = getattr(memory_store, "conn", None)
+        if conn is not None:
+            self.parent.event_loop.create_task(conn.close())
         await super().shutdown()

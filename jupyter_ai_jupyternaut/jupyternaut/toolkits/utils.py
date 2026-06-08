@@ -17,6 +17,28 @@ def get_serverapp():
     return server
 
 
+_RTC_REQUIRED_MESSAGE = (
+    "Jupyternaut's live notebook tools require the optional "
+    "`jupyter-server-documents` server extension, which provides the real-time "
+    "collaboration backend. Install it with "
+    "`pip install 'jupyter-ai-jupyternaut[rtc]'` (or "
+    "`conda install jupyter-server-documents`) and restart the Jupyter server."
+)
+
+
+def _require_web_app_setting(serverapp, key: str):
+    """Returns ``serverapp.web_app.settings[key]``.
+
+    Raises a ``RuntimeError`` with an actionable message if the setting is
+    missing, which happens when the optional real-time collaboration backend
+    (`jupyter-server-documents`) is not installed.
+    """
+    try:
+        return serverapp.web_app.settings[key]
+    except KeyError as e:
+        raise RuntimeError(_RTC_REQUIRED_MESSAGE) from e
+
+
 def normalize_filepath(file_path: str) -> str:
     """
     Normalizes a file path for Jupyter applications to return an absolute path.
@@ -76,7 +98,7 @@ async def get_jupyter_ydoc(file_id: str):
         `YNotebook` ydoc for the notebook
     """
     serverapp = get_serverapp()
-    yroom_manager = serverapp.web_app.settings["yroom_manager"]
+    yroom_manager = _require_web_app_setting(serverapp, "yroom_manager")
     room_id = f"json:notebook:{file_id}"
 
     if yroom_manager.has_room(room_id):
@@ -87,7 +109,7 @@ async def get_jupyter_ydoc(file_id: str):
 
 async def get_global_awareness() -> Optional[Awareness]:
     serverapp = get_serverapp()
-    yroom_manager = serverapp.web_app.settings["yroom_manager"]
+    yroom_manager = _require_web_app_setting(serverapp, "yroom_manager")
 
     room_id = "JupyterLab:globalAwareness"
     if yroom_manager.has_room(room_id):
@@ -111,7 +133,7 @@ async def get_file_id(file_path: str) -> str:
     normalized_file_path = normalize_filepath(file_path)
 
     serverapp = get_serverapp()
-    file_id_manager = serverapp.web_app.settings["file_id_manager"]
+    file_id_manager = _require_web_app_setting(serverapp, "file_id_manager")
     file_id = file_id_manager.get_id(normalized_file_path)
 
     return file_id
