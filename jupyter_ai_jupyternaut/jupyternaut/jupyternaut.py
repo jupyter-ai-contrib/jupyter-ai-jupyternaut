@@ -136,11 +136,20 @@ class JupyternautPersona(BasePersona):
                     {"configurable": context},
                     version="v3"
                 )
-                async for m in stream.messages:
-                    async for delta in m.reasoning:
-                        yield delta
-                    async for delta in m.text:
-                        yield delta
+                async for event in stream:
+                    if event["method"] != "messages":
+                        continue
+                    data = event["params"]["data"][0]
+                    if not isinstance(data, dict):
+                        continue
+                    if data.get("event") != "content-block-delta":
+                        continue
+
+                    block = data.get("delta") or {}
+                    if block.get("type") == "text-delta":
+                        yield block.get("text", "")
+                    elif block.get("type") == "reasoning-delta":
+                        yield block.get('reasoning', '')
 
             response_aiter = create_aiter()
             await self.stream_message(response_aiter)
