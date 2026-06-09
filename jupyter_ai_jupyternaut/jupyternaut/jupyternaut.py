@@ -156,16 +156,25 @@ class JupyternautPersona(BasePersona):
             }
 
             async def create_aiter():
-                async for token, metadata in agent.astream(
+                stream = await agent.astream_events(
                     {"messages": [{"role": "user", "content": message.body}]},
                     {"configurable": context},
-                    stream_mode="messages",
-                ):
-                    node = metadata["langgraph_node"]
-                    content_blocks = token.content_blocks
-                    if node == "model" and content_blocks:
-                        if token.text:
-                            yield token.text
+                    version="v3"
+                )
+                async for event in stream:
+                    if event["method"] != "messages":
+                        continue
+                    data = event["params"]["data"][0]
+                    if not isinstance(data, dict):
+                        continue
+                    if data.get("event") != "content-block-delta":
+                        continue
+
+                    block = data.get("delta") or {}
+                    if block.get("type") == "text-delta":
+                        yield block.get("text", "")
+                    elif block.get("type") == "reasoning-delta":
+                        yield block.get('reasoning', '')
 
             response_aiter = create_aiter()
             await self.stream_message(response_aiter)
