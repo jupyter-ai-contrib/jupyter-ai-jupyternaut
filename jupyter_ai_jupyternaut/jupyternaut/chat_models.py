@@ -273,6 +273,8 @@ class ChatLiteLLM(BaseChatModel):
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
     max_tokens: Optional[int] = None
+    num_ctx: Optional[int] = None
+    """Size of the context window"""
 
     max_retries: int = 1
 
@@ -321,7 +323,10 @@ class ChatLiteLLM(BaseChatModel):
             "force_timeout": self.request_timeout,
             "api_base": self.api_base,
         }
-        return {**self._default_params, **creds}
+        params = {**self._default_params, **creds}
+        if self.num_ctx is not None:
+            params['num_ctx'] = self.num_ctx
+        return params
 
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
@@ -416,6 +421,9 @@ class ChatLiteLLM(BaseChatModel):
 
         if values["top_k"] is not None and values["top_k"] <= 0:
             raise ValueError("top_k must be positive")
+
+        if values["num_ctx"] is not None and values["num_ctx"] <= 0:
+            raise ValueError("num_ctx must be positive")
 
         return values
 
@@ -624,7 +632,7 @@ class ChatLiteLLM(BaseChatModel):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
-            "n": self.n,
+            "n": self.n
         }
 
     @property

@@ -19,6 +19,10 @@ from .toolkits.notebook import toolkit as nb_toolkit
 from .toolkits.jupyterlab import toolkit as jlab_toolkit
 from .toolkits.code_execution import toolkit as exec_toolkit
 
+# if the context window is too small it won't see all of the
+# system prompt
+DEFAULT_OLLAMA_NUM_CTX = 16384
+
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 JUPYTERNAUT_AVATAR_PATH = str(
@@ -83,6 +87,9 @@ class JupyternautPersona(BasePersona):
         return handle_tool_errors
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
+        if (model_id.startswith("ollama/") or model_id.startswith("ollama_chat/")) \
+            and "num_ctx" not in model_args:
+                model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
 
