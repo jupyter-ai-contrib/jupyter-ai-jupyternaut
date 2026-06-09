@@ -2,12 +2,23 @@ import os
 from typing import Any
 
 import aiosqlite
-from jupyter_ai_persona_manager import BasePersona, PersonaDefaults
+from jupyter_ai_persona_manager import (
+  BasePersona,
+  McpServerHttp,
+  McpServerStdio,
+  PersonaDefaults,
+)
 from jupyter_core.paths import jupyter_data_dir
 from jupyterlab_chat.models import Message
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_tool_call
 from langchain.messages import ToolMessage
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.sessions import (
+  Connection,
+  StreamableHttpConnection,
+  StdioConnection,
+)
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from .chat_models import ChatLiteLLM
@@ -54,10 +65,33 @@ class JupyternautPersona(BasePersona):
             self._memory_store = AsyncSqliteSaver(conn)
         return self._memory_store
 
-    def get_tools(self):
+    async def get_tools(self):
         tools = nb_toolkit
         tools += jlab_toolkit
         tools += exec_toolkit
+
+        # Add MCP tools
+        mcp_settings = self.get_mcp_settings()
+        connections: dict[str, Connection] = {}
+        for mcp in mcp_settings.mcp_servers:
+            if isinstance(mcp, McpServerHttp):
+                connection: StreamableHttpConnection = {
+                    "transport": mcp.type,
+                    "url": mcp.url,
+                    "headers": mcp.headers
+                }
+                connections[mcp.name] = connection
+            elif isinstance(mcp, McpServerStdio):
+                connection: StdioConnection = {
+                    "transport": "stdio",
+                    "command": mcp.command,
+                    "args": mcp.args,
+                    "env": {var.name: var.value for var in mcp.env}
+                }
+                connections[mcp.name] = connection
+        client = MultiServerMCPClient(connections)
+        tools += await client.get_tools()
+
         return tools
 
     def _create_tool_error_handler(self):
@@ -90,7 +124,7 @@ class JupyternautPersona(BasePersona):
             model,
             system_prompt=system_prompt,
             checkpointer=memory_store,
-            tools=self.get_tools(),
+            tools=await self.get_tools(),
             middleware=[self._create_tool_error_handler()],
         )
 
