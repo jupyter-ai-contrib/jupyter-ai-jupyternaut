@@ -43,9 +43,11 @@ dependencies = [
     "python_dotenv>=1,<2",
     "jupyter_ai_persona_manager>=0.0.1",
     "langchain>=1.0.0",
-    "langgraph-checkpoint-sqlite>=3.0.0",
+    # Provides the base checkpointer (`InMemorySaver`) used for in-memory
+    # conversation memory. Persistent, SQLite-backed memory is available via the
+    # optional `persistence` extra.
+    "langgraph-checkpoint>=2.1.0",
     "langchain_mcp_adapters>=0.2,<0.3",
-    "aiosqlite>=0.20",
     "jupyter_server_documents>=0.1.0a8",
     "jupyterlab-commands-toolkit>=0.1.2",
     "jupyterlab-notebook-awareness>=0.2.0",
@@ -53,6 +55,17 @@ dependencies = [
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
 [project.optional-dependencies]
+# Persist conversation memory to a local SQLite database so that it survives
+# server restarts. Without it, Jupyternaut keeps conversation memory only for
+# the lifetime of the server process (in-memory).
+persistence = [
+    "langgraph-checkpoint-sqlite>=3.0.0",
+    "aiosqlite>=0.20",
+]
+# All optional runtime features.
+all = [
+    "jupyter_ai_jupyternaut[persistence]",
+]
 test = [
     "coverage",
     "pytest",
