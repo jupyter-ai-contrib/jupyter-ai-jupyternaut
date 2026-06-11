@@ -7,8 +7,8 @@ has_binder: false
 has_settings: false
 kind: frontend-and-server
 labextension_name: '@jupyter-ai/jupyternaut'
-project_short_description: Package providing the default AI persona, Jupyternaut,
-    in Jupyter AI.
+project_short_description: Package providing Jupyternaut, a custom AI persona in
+    Jupyter AI.
 python_name: jupyter_ai_jupyternaut
 repository: https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut
 test: true

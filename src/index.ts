@@ -35,7 +35,7 @@ export namespace CommandIDs {
 const plugin: JupyterFrontEndPlugin<void> = {
   id: '@jupyter-ai/jupyternaut:plugin',
   description:
-    'Package providing the default AI persona, Jupyternaut, in Jupyter AI.',
+    'Package providing Jupyternaut, a custom AI persona in Jupyter AI.',
   autoStart: true,
   activate: (app: JupyterFrontEnd) => {
     console.log('JupyterLab extension @jupyter-ai/jupyternaut is activated!');

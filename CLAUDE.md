@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **jupyter_ai_jupyternaut**, a JupyterLab extension that provides the default AI persona "Jupyternaut" for Jupyter AI. It consists of:
+This is **jupyter_ai_jupyternaut**, a JupyterLab extension that provides Jupyternaut, a custom AI persona for Jupyter AI. It consists of:
 
 - **Python package**: `jupyter_ai_jupyternaut` (server extension)
 - **NPM package**: `@jupyter-ai/jupyternaut` (frontend extension)
