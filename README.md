@@ -2,7 +2,7 @@
 
 [![Github Actions Status](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/workflows/Build/badge.svg)](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/actions/workflows/build.yml)
 
-Package providing the default AI persona, Jupyternaut, in Jupyter AI.
+Package providing Jupyternaut, a custom AI persona in Jupyter AI.
 
 This extension is composed of a Python package named `jupyter_ai_jupyternaut`
 for the server extension and a NPM package named `@jupyter-ai/jupyternaut`
