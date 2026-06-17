@@ -327,16 +327,21 @@ class ChatLiteLLM(BaseChatModel):
         if self.num_ctx is not None:
             params['num_ctx'] = self.num_ctx
         return params
-
+    
+    
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
+        import litellm
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.completion(**kwargs)
+            try:
+                return self.client.completion(**kwargs)
+            except litellm.exceptions.AuthenticationError as e:
+                raise ChatLiteLLMException(f"Authentication Failed: {str(e)}") from e
 
         return _completion_with_retry(**kwargs)
 
@@ -347,6 +352,7 @@ class ChatLiteLLM(BaseChatModel):
         **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the async completion call."""
+        import litellm
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         # Enables ephemeral prompt caching of the last system message by
@@ -369,13 +375,15 @@ class ChatLiteLLM(BaseChatModel):
 
         @retry_decorator
         async def _completion_with_retry(**kwargs: Any) -> Any:
-            return await self.client.acompletion(
-                **kwargs,
-                **cache_control_kwargs,
-            )
+            try:
+                return await self.client.acompletion(
+                    **kwargs,
+                    **cache_control_kwargs,
+                )
+            except litellm.exceptions.AuthenticationError as e:
+                raise ChatLiteLLMException(f"Authentication Failed: {str(e)}") from e
 
         return await _completion_with_retry(**kwargs)
-
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
