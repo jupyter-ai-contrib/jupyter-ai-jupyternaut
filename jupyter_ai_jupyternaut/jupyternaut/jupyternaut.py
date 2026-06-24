@@ -18,6 +18,7 @@ from langchain_mcp_adapters.sessions import (
   StreamableHttpConnection,
   StdioConnection,
 )
+from langgraph.checkpoint.memory import InMemorySaver
 
 from .chat_models import ChatLiteLLM
 from .prompt_template import (
@@ -77,7 +78,7 @@ class JupyternautPersona(BasePersona):
             import aiosqlite
             from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
         except ImportError:
-            from langgraph.checkpoint.memory import InMemorySaver
+            pass
 
             self.log.info(
                 "`langgraph-checkpoint-sqlite` is not installed; Jupyternaut "
@@ -143,11 +144,16 @@ class JupyternautPersona(BasePersona):
         return handle_tool_errors
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
+        def is_true_flexible(val: str) -> bool:
+            return val.strip().lower() in ("true", "1", "yes", "y", "t")
+
         if (model_id.startswith("ollama/") or model_id.startswith("ollama_chat/")) \
             and "num_ctx" not in model_args:
-                model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
+            model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
-        memory_store = await self.get_memory_store()
+        memory_store = (await self.get_memory_store()) \
+            if is_true_flexible(model_args.get('memory_store', "true")) \
+            else InMemorySaver()
 
         return create_agent(
             model,
@@ -172,13 +178,23 @@ class JupyternautPersona(BasePersona):
             return
 
         try:
-            model_id = self.config_manager.chat_model
-            model_args = self.config_manager.chat_model_args
-            system_prompt = self.get_system_prompt(model_id=model_id, message=message)
-            agent = await self.get_agent(
-                model_id=model_id, model_args=model_args, system_prompt=system_prompt
+            model_id = (message.metadata or {}).get(
+                "model_id", self.config_manager.chat_model
             )
-
+            model_args = self.config_manager.chat_model_args | \
+                (message.metadata or {}).get(
+                    "model_args", {}
+                )
+            system_prompt = self.get_system_prompt(
+                model_id=model_id,
+                message=message
+            )
+            self.log.debug("%s %s", model_id, model_args)
+            agent = await self.get_agent(
+                model_id=model_id,
+                model_args=model_args,
+                system_prompt=system_prompt
+            )
             context = {
                 "thread_id": self.ychat.get_id(),
                 "username": message.sender
