@@ -152,7 +152,7 @@ class JupyternautPersona(BasePersona):
             model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = (await self.get_memory_store()) \
-            if is_true_flexible(model_args.get('memory_store', "true")) \
+            if is_true_flexible(model_args.get('persistence', "true")) \
             else InMemorySaver()
 
         return create_agent(
