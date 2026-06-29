@@ -18,7 +18,6 @@ from langchain_mcp_adapters.sessions import (
   StreamableHttpConnection,
   StdioConnection,
 )
-from langgraph.checkpoint.memory import InMemorySaver
 
 from .chat_models import ChatLiteLLM
 from .prompt_template import (
@@ -78,7 +77,7 @@ class JupyternautPersona(BasePersona):
             import aiosqlite
             from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
         except ImportError:
-            pass
+            from langgraph.checkpoint.memory import InMemorySaver
 
             self.log.info(
                 "`langgraph-checkpoint-sqlite` is not installed; Jupyternaut "
@@ -149,8 +148,10 @@ class JupyternautPersona(BasePersona):
 
         if (model_id.startswith("ollama/") or model_id.startswith("ollama_chat/")) \
             and "num_ctx" not in model_args:
-            model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
+                model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
+
+        from langgraph.checkpoint.memory import InMemorySaver
         memory_store = (await self.get_memory_store()) \
             if is_true_flexible(model_args.get('persistence', "true")) \
             else InMemorySaver()
