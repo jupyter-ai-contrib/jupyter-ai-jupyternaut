@@ -91,10 +91,13 @@ class JupyternautPersona(BasePersona):
         conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
         return AsyncSqliteSaver(conn)
 
-    async def get_tools(self):
+    async def get_tools(self, skip_exec_toolkit: bool=False):
         tools = nb_toolkit
         tools += jlab_toolkit
-        tools += exec_toolkit
+
+        # Bash tool conflicts with internal openclaw tools
+        if not skip_exec_toolkit:
+            tools += exec_toolkit
 
         # Add MCP tools
         mcp_settings = self.get_mcp_settings()
@@ -152,16 +155,23 @@ class JupyternautPersona(BasePersona):
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
 
         from langgraph.checkpoint.memory import InMemorySaver
-        memory_store = (await self.get_memory_store()) \
-            if is_true_flexible(model_args.get('persistence', "true")) \
-            else InMemorySaver()
+        use_persistence = is_true_flexible(model_args.get(
+            'persistence', "false" if "/openclaw" in model_id or "/hermes" in model_id else "true"
+        ))
+
+        # openclaw will fail if you pass it a bash tool as this conflicts with the
+        # internal openclaw tool.  It will also fail if persistence is true and it
+        # pulls in a bash tool from a previous run
+
+        skip_exec_toolkit = "/openclaw" in model_id
+        memory_store = (await self.get_memory_store()) if use_persistence else InMemorySaver()
 
         return create_agent(
             model,
             system_prompt=system_prompt,
             checkpointer=memory_store,
-            tools=await self.get_tools(),
-            middleware=[self._create_tool_error_handler()],
+            tools=await self.get_tools(skip_exec_toolkit),
+            middleware=[self._create_tool_error_handler()]
         )
 
     async def process_message(self, message: Message) -> None:
