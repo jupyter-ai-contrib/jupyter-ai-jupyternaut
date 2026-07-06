@@ -92,12 +92,9 @@ class JupyternautPersona(BasePersona):
         return AsyncSqliteSaver(conn)
 
     async def get_tools(self, skip_exec_toolkit: bool=False):
-        tools = nb_toolkit
-        tools += jlab_toolkit
-
         # Bash tool conflicts with internal openclaw tools
-        if not skip_exec_toolkit:
-            tools += exec_toolkit
+        tools = nb_toolkit + jlab_toolkit + \
+            (exec_toolkit if not skip_exec_toolkit else [])
 
         # Add MCP tools
         mcp_settings = self.get_mcp_settings()
