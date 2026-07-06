@@ -91,10 +91,10 @@ class JupyternautPersona(BasePersona):
         conn = await aiosqlite.connect(MEMORY_STORE_PATH, check_same_thread=False)
         return AsyncSqliteSaver(conn)
 
-    async def get_tools(self):
-        tools = nb_toolkit
-        tools += jlab_toolkit
-        tools += exec_toolkit
+    async def get_tools(self, skip_exec_toolkit: bool=False):
+        # Bash tool conflicts with internal openclaw tools
+        tools = nb_toolkit + jlab_toolkit + \
+            (exec_toolkit if not skip_exec_toolkit else [])
 
         # Add MCP tools
         mcp_settings = self.get_mcp_settings()
@@ -143,18 +143,32 @@ class JupyternautPersona(BasePersona):
         return handle_tool_errors
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
+        def is_true_flexible(val: str) -> bool:
+            return val.strip().lower() in ("true", "1", "yes", "y", "t")
+
         if (model_id.startswith("ollama/") or model_id.startswith("ollama_chat/")) \
             and "num_ctx" not in model_args:
                 model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
-        memory_store = await self.get_memory_store()
+
+        from langgraph.checkpoint.memory import InMemorySaver
+        use_persistence = is_true_flexible(model_args.get(
+            'persistence', "false" if "/openclaw" in model_id or "/hermes" in model_id else "true"
+        ))
+
+        # openclaw will fail if you pass it a bash tool as this conflicts with the
+        # internal openclaw tool.  It will also fail if persistence is true and it
+        # pulls in a bash tool from a previous run
+
+        skip_exec_toolkit = "/openclaw" in model_id
+        memory_store = (await self.get_memory_store()) if use_persistence else InMemorySaver()
 
         return create_agent(
             model,
             system_prompt=system_prompt,
             checkpointer=memory_store,
-            tools=await self.get_tools(),
-            middleware=[self._create_tool_error_handler()],
+            tools=await self.get_tools(skip_exec_toolkit),
+            middleware=[self._create_tool_error_handler()]
         )
 
     async def process_message(self, message: Message) -> None:
@@ -164,21 +178,33 @@ class JupyternautPersona(BasePersona):
                 "Please make sure to first install that package in your environment & restart the server.",
             )
             return
-        if not self.config_manager.chat_model:
+
+        model_id = (message.metadata or {}).get(
+            "model_id", self.config_manager.chat_model
+        )
+
+        if not model_id:
             self.send_message(
                 "No chat model is configured.\n\n"
-                "You must set one first in the Jupyter AI settings, found in 'Settings > AI Settings' from the menu bar."
+                "You must set one first in the Jupyter AI settings, found in 'Settings > Jupyternaut settings' from the menu bar."
             )
             return
 
         try:
-            model_id = self.config_manager.chat_model
-            model_args = self.config_manager.chat_model_args
-            system_prompt = self.get_system_prompt(model_id=model_id, message=message)
-            agent = await self.get_agent(
-                model_id=model_id, model_args=model_args, system_prompt=system_prompt
+            model_args = self.config_manager.chat_model_args | \
+                (message.metadata or {}).get(
+                    "model_args", {}
+                )
+            system_prompt = self.get_system_prompt(
+                model_id=model_id,
+                message=message
             )
-
+            self.log.debug("%s %s", model_id, model_args)
+            agent = await self.get_agent(
+                model_id=model_id,
+                model_args=model_args,
+                system_prompt=system_prompt
+            )
             context = {
                 "thread_id": self.ychat.get_id(),
                 "username": message.sender
