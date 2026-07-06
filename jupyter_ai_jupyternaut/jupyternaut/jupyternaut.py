@@ -178,17 +178,19 @@ class JupyternautPersona(BasePersona):
                 "Please make sure to first install that package in your environment & restart the server.",
             )
             return
-        if not self.config_manager.chat_model:
+
+        model_id = (message.metadata or {}).get(
+            "model_id", self.config_manager.chat_model
+        )
+
+        if not model_id:
             self.send_message(
                 "No chat model is configured.\n\n"
-                "You must set one first in the Jupyter AI settings, found in 'Settings > AI Settings' from the menu bar."
+                "You must set one first in the Jupyter AI settings, found in 'Settings > Jupyternaut settings' from the menu bar."
             )
             return
 
         try:
-            model_id = (message.metadata or {}).get(
-                "model_id", self.config_manager.chat_model
-            )
             model_args = self.config_manager.chat_model_args | \
                 (message.metadata or {}).get(
                     "model_args", {}
