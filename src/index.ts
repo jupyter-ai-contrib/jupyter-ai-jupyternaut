@@ -14,12 +14,15 @@ import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { SingletonLayout, Widget } from '@lumino/widgets';
 
+import { IPersonaControlRegistry } from '@jupyter-ai/persona-manager';
+
 //import { completionPlugin } from './completions';
 import { buildErrorWidget } from './widgets/chat-error';
 import { buildAiSettings } from './widgets/settings-widget';
 import { statusItemPlugin } from './status';
 import { IJaiCompletionProvider } from './tokens';
 import { requestAPI } from './handler';
+import { makeSettingsButton } from './components/settings-button';
 
 export type DocumentTracker = IWidgetTracker<IDocumentWidget>;
 export namespace CommandIDs {
@@ -28,6 +31,14 @@ export namespace CommandIDs {
    */
   export const openAiSettings = '@jupyter-ai/jupyternaut:open-settings';
 }
+
+/**
+ * The Jupyternaut persona's ID, matching `BasePersona.id` on the server
+ * (`jupyter-ai-personas::<package>::<class>`). Used to scope the settings
+ * button to the Jupyternaut persona in the persona controls.
+ */
+const JUPYTERNAUT_PERSONA_ID =
+  'jupyter-ai-personas::jupyter_ai_jupyternaut::JupyternautPersona';
 
 /**
  * Initialization data for the @jupyter-ai/jupyternaut extension.
@@ -126,9 +137,32 @@ const jupyternautSettingsPlugin: JupyterFrontEndPlugin<void> = {
   }
 };
 
+/**
+ * Plugin that contributes Jupyternaut's settings button to the persona controls
+ * in the chat input toolbar, via persona-manager's control registry. The button
+ * is shown only when Jupyternaut is the selected persona, and opens Jupyternaut's
+ * settings view (where custom models are defined).
+ */
+const settingsButtonPlugin: JupyterFrontEndPlugin<void> = {
+  id: '@jupyter-ai/jupyternaut:settings-button',
+  autoStart: true,
+  requires: [IPersonaControlRegistry],
+  activate: (
+    app: JupyterFrontEnd,
+    controlRegistry: IPersonaControlRegistry
+  ) => {
+    controlRegistry.addControl({
+      id: '@jupyter-ai/jupyternaut:settings-button',
+      personaId: JUPYTERNAUT_PERSONA_ID,
+      component: makeSettingsButton(app.commands, CommandIDs.openAiSettings)
+    });
+  }
+};
+
 export default [
   plugin,
   jupyternautSettingsPlugin,
+  settingsButtonPlugin,
   // webComponentsPlugin,
   // completionPlugin,
   statusItemPlugin

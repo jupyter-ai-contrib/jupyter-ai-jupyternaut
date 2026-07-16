@@ -26,15 +26,17 @@ export const JUPYTERNAUT_NAME = 'Jupyternaut';
 
 // --- Selectors -------------------------------------------------------------
 
-// Persona controls (from @jupyter-ai/acp-client, which owns the input toolbar).
-const PICKER = '.jp-jupyter-ai-acp-client-personaControls-persona-btn';
-const SETTINGS_BTN = '.jp-jupyter-ai-acp-client-personaControls-settings-btn';
+// Persona controls (from @jupyter-ai/persona-manager, which owns the input
+// toolbar). The settings button is contributed by @jupyter-ai/jupyternaut
+// through persona-manager's control registry.
+const PICKER = '.jp-jai-personaControls-persona-btn';
+const SETTINGS_BTN = '.jp-ai-jupyternaut-settingsButton';
 const VISIBLE_CONTROL_BTN =
-  '.jp-jupyter-ai-acp-client-personaControls-controls > .jp-jupyter-ai-acp-client-personaControls-control-btn';
+  '.jp-jai-personaControls-controls > .jp-jai-personaControls-control-btn';
 // A control dropdown's MUI menu popover (a page-root portal) and its per-option
-// name span. See `menuAnchorProps` / `ChoiceMenuItem` in acp-client.
-const MENU_PAPER = '.jp-jupyter-ai-acp-client-controlMenu-paper';
-const MENU_NAME = '.jp-jupyter-ai-acp-client-controlMenu-name';
+// name span. See `menuAnchorProps` / `ChoiceMenuItem` in persona-manager.
+const MENU_PAPER = '.jp-jai-controlMenu-paper';
+const MENU_NAME = '.jp-jai-controlMenu-name';
 
 const INPUT = '.jp-chat-input-container';
 const MESSAGE = '.jp-chat-rendered-message';

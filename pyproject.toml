@@ -41,7 +41,7 @@ dependencies = [
     "jupyter_ai_litellm>=0.0.2",
     "jinja2>=3.0,<4",
     "python_dotenv>=1,<2",
-    "jupyter_ai_persona_manager>=0.0.1",
+    "jupyter_ai_persona_manager>=0.1.0rc0",
     "langchain>=1.0.0",
     # Provides the base checkpointer (`InMemorySaver`) used for in-memory
     # conversation memory. Persistent, SQLite-backed memory is available via the

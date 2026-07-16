@@ -60,8 +60,9 @@
     "dependencies": {
         "@emotion/react": "^11.10.5",
         "@emotion/styled": "^11.10.5",
+        "@jupyter-ai/persona-manager": "^0.1.0-rc0",
         "@jupyter-notebook/application": "^7.2.0",
-        "@jupyter/chat": "^0.17.0",
+        "@jupyter/chat": "^0.23.0-alpha.4",
         "@jupyterlab/application": "^4.2.0",
         "@jupyterlab/completer": "^4.2.0",
         "@jupyterlab/coreutils": "^6.2.0",
@@ -97,6 +98,10 @@
         "typescript": "~5.8.0",
         "yjs": "^13.5.0"
     },
+    "resolutions": {
+        "@jupyterlab/application": "^4.4.9",
+        "@jupyterlab/docregistry": "^4.4.9"
+    },
     "sideEffects": [
         "style/*.css",
         "style/index.js"
@@ -118,6 +123,10 @@
         },
         "sharedPackages": {
             "@jupyter/chat": {
+                "singleton": true,
+                "bundled": false
+            },
+            "@jupyter-ai/persona-manager": {
                 "singleton": true,
                 "bundled": false
             }

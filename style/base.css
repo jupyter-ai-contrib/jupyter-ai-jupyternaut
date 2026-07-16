@@ -5,3 +5,12 @@
 */
 
 @import url('./chat-settings.css');
+
+/* Jupyternaut settings button, contributed to the persona controls in the chat
+   input toolbar (shown when Jupyternaut is the selected persona). */
+.jp-ai-jupyternaut-settingsButton {
+  flex-shrink: 0;
+  min-width: 0;
+  padding: 2px 4px;
+  color: var(--jp-ui-font-color2);
+}
