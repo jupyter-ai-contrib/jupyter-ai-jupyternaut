@@ -2186,7 +2186,7 @@ __metadata:
   dependencies:
     "@emotion/react": ^11.10.5
     "@emotion/styled": ^11.10.5
-    "@jupyter-ai/persona-manager": ^0.1.0-rc0
+    "@jupyter-ai/persona-manager": ^0.1.0-rc1
     "@jupyter-notebook/application": ^7.2.0
     "@jupyter/chat": ^0.23.0-alpha.4
     "@jupyterlab/application": ^4.2.0
@@ -2224,16 +2224,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@jupyter-ai/persona-manager@npm:^0.1.0-rc0":
-  version: 0.1.0-rc0
-  resolution: "@jupyter-ai/persona-manager@npm:0.1.0-rc0"
+"@jupyter-ai/persona-manager@npm:^0.1.0-rc1":
+  version: 0.1.0-rc1
+  resolution: "@jupyter-ai/persona-manager@npm:0.1.0-rc1"
   dependencies:
     "@jupyter/chat": ^0.23.0-alpha.4
     "@jupyter/ydoc": "*"
     "@jupyterlab/application": ^4.0.0
     "@jupyterlab/coreutils": ^6.0.0
     "@jupyterlab/services": ^7.0.0
-  checksum: 8e98ba3234c83d01ce7768d4c52f487334233d12468d89c9fe228c25166e836a4fb4800c64862483d1148f59b70db78365befd76f4ee45fb25d62e0ca2e45711
+  checksum: 9cc905d9bc442344d962ae38e0f5e28ec9a4df00ba5490758e736d56eb8768dc2368da32b7cc441cd204273b4e37be5a74803f88630016bbd80a19e258e3911a
   languageName: node
   linkType: hard
 
