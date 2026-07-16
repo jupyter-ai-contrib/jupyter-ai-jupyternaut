@@ -19,6 +19,7 @@ from jupyter_ai_jupyternaut.jupyternaut.jupyternaut import (
     DEFAULT_MODEL_ID,
     JupyternautPersona,
     _extract_message_text,
+    _litellm_chat_models,
 )
 
 
@@ -133,8 +134,11 @@ def test_model_configuration_lists_custom_then_default(config_path):
     cm.update_config(UpdateConfigRequest(custom_models=[m1]))
 
     mc = _persona(cm, None)._build_model_configuration()
-    assert [o.id for o in mc.options] == [m1.id, DEFAULT_MODEL_ID]
-    assert mc.options[-1].name == "Default"
+    ids = [o.id for o in mc.options]
+    # Custom model first, then the built-in default, then the LiteLLM catalog.
+    assert ids[0] == m1.id
+    assert ids[1] == DEFAULT_MODEL_ID
+    assert mc.options[1].name == "Default"
     assert mc.current is None
     assert mc.settings == []
 
@@ -173,6 +177,57 @@ def test_resolve_returns_none_when_nothing_configured(config_path):
     _write_config(config_path, {})
     cm = _manager(config_path)
     assert _persona(cm, None)._resolve_model() == (None, {})
+
+
+def test_resolve_direct_litellm_model(config_path):
+    """A LiteLLM model ID picked directly from the list is used as-is."""
+    _write_config(config_path, {})
+    cm = _manager(config_path)
+    model_id, params = _persona(cm, "openai/gpt-4o")._resolve_model()
+    assert model_id == "openai/gpt-4o"
+    assert params == {}
+
+
+def test_resolve_direct_litellm_model_with_saved_params(config_path):
+    """Params saved for a directly-picked model (config `fields`) are applied."""
+    _write_config(
+        config_path,
+        {"fields": {"openai/gpt-4o": {"temperature": 0.2}}},
+    )
+    cm = _manager(config_path)
+    model_id, params = _persona(cm, "openai/gpt-4o")._resolve_model()
+    assert model_id == "openai/gpt-4o"
+    assert params == {"temperature": 0.2}
+
+
+# ---------------------------------------------------------------------------
+# LiteLLM model catalog in the picker
+# ---------------------------------------------------------------------------
+
+
+def test_litellm_chat_models_is_large_and_excludes_placeholder():
+    models = _litellm_chat_models()
+    # LiteLLM knows well over a thousand chat models.
+    assert len(models) > 1000
+    assert "sample_spec" not in models
+    assert models == sorted(models)
+
+
+def test_model_configuration_includes_full_litellm_catalog(config_path):
+    _write_config(config_path, {})
+    cm = _manager(config_path)
+    m1 = CustomModel(name="Hermes", model_id="openai/hermes")
+    cm.update_config(UpdateConfigRequest(custom_models=[m1]))
+
+    mc = _persona(cm, None)._build_model_configuration()
+    ids = [o.id for o in mc.options]
+    # Custom model first, then the built-in default, then the LiteLLM catalog.
+    assert ids[0] == m1.id
+    assert ids[1] == DEFAULT_MODEL_ID
+    assert len(ids) > 1000
+    # A representative LiteLLM model is present as a directly-selectable option.
+    llm = _litellm_chat_models()
+    assert llm[0] in ids
 
 
 # ---------------------------------------------------------------------------

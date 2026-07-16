@@ -109,4 +109,33 @@ test.describe('Jupyternaut custom models', () => {
       options.findIndex(o => o.includes('Model A'))
     );
   });
+
+  test('lists LiteLLM models in the picker, with a custom model on top', async () => {
+    // With no custom models yet, the picker still offers the full LiteLLM
+    // catalog — a well-known model like `gpt-4o` is present. Poll for the model
+    // control (options arrive over awareness).
+    await helpers.waitForModelControl();
+    await helpers.expectModelOption('gpt-4o');
+
+    // Adding a custom model puts it above the LiteLLM catalog.
+    await helpers.createCustomModel({
+      name: 'Top Model',
+      modelId: FAKE_MODEL_ID
+    });
+    await expect
+      .poll(async () => (await helpers.modelOptions()).includes('Top Model'), {
+        timeout: 30000
+      })
+      .toBe(true);
+    const options = await helpers.modelOptions();
+    expect(options.indexOf('Top Model')).toBeLessThan(
+      options.indexOf('gpt-4o')
+    );
+  });
+
+  test('shows the settings button to the right of the model selector', async () => {
+    await helpers.waitForModelControl();
+    await expect(helpers.settingsButtonVisible).toBeVisible();
+    await helpers.expectSettingsButtonRightOfModel();
+  });
 });

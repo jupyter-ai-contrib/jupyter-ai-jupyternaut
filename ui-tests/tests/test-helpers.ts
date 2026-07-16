@@ -4,11 +4,13 @@
  *
  * Helpers for the Jupyternaut E2E suites.
  *
- * These drive the chat UI (the persona controls come from `@jupyter-ai/acp-client`,
- * which owns the input toolbar) and the Jupyternaut settings view (where custom
- * models are defined). The model backend is a fake LiteLLM provider registered
- * in the server process — see `../fake_litellm_provider.py` — so a custom model
- * created against model ID `fake-litellm/echo` streams a deterministic reply.
+ * These drive the chat UI (the persona controls come from
+ * `@jupyter-ai/persona-manager`, which owns the input toolbar; Jupyternaut
+ * contributes its settings button through that package's control registry) and
+ * the Jupyternaut settings view (where custom models are defined). The model
+ * backend is a fake LiteLLM provider registered in the server process — see
+ * `../fake_litellm_provider.py` — so a custom model created against model ID
+ * `fake-litellm/echo` streams a deterministic reply.
  */
 
 import { expect, IJupyterLabPageFixture } from '@jupyterlab/galata';
@@ -226,6 +228,42 @@ export class TestHelpers {
   }
 
   /**
+   * Open the model picker and assert an option with the given exact name is
+   * present, then close the menu. Cheaper than reading the whole (very large)
+   * option list; use it to check a specific LiteLLM model is offered.
+   */
+  async expectModelOption(name: string): Promise<void> {
+    await this.modelControl.click();
+    const menu = this.page.locator(MENU_PAPER);
+    await expect(menu).toBeVisible({ timeout: TIMEOUT });
+    await expect(menu.getByRole('menuitem', { name, exact: true })).toHaveCount(
+      1,
+      { timeout: TIMEOUT }
+    );
+    await this.page.keyboard.press('Escape');
+  }
+
+  /** The Jupyternaut settings button in the toolbar (visible copy). */
+  get settingsButtonVisible(): Locator {
+    // The persona controls render a hidden measurement copy of the controls row;
+    // scope to the toolbar group's visible copy via the first match.
+    return this.chat.locator(SETTINGS_BTN).first();
+  }
+
+  /**
+   * Assert the settings button sits to the right of the model selector, i.e.
+   * its left edge is at or past the model control's left edge.
+   */
+  async expectSettingsButtonRightOfModel(): Promise<void> {
+    const modelBox = await this.modelControl.boundingBox();
+    const settingsBox = await this.settingsButtonVisible.boundingBox();
+    if (!modelBox || !settingsBox) {
+      throw new Error('Model control or settings button not visible.');
+    }
+    expect(settingsBox.x).toBeGreaterThan(modelBox.x);
+  }
+
+  /**
    * Send a message and return the text of the resulting reply (the latest
    * rendered message once the human message + reply have both rendered).
    */
@@ -236,11 +274,21 @@ export class TestHelpers {
       .getByRole('combobox')
       .pressSequentially(text);
     await this.chat.locator(`${INPUT} .jp-chat-send-button`).click();
+    // Two new rendered messages (the human echo + the reply) and — since the
+    // reply streams in and starts empty — wait until the last message has
+    // non-empty text before reading it.
     await expect
-      .poll(async () => this.chat.locator(MESSAGE).count(), {
-        timeout: TIMEOUT
-      })
-      .toBeGreaterThanOrEqual(before + 2);
+      .poll(
+        async () => {
+          const count = await this.chat.locator(MESSAGE).count();
+          if (count < before + 2) {
+            return '';
+          }
+          return (await this.chat.locator(MESSAGE).last().textContent()) ?? '';
+        },
+        { timeout: TIMEOUT }
+      )
+      .not.toBe('');
     return (await this.chat.locator(MESSAGE).last().textContent()) ?? '';
   }
 }

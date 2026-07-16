@@ -42,6 +42,32 @@ DEFAULT_OLLAMA_NUM_CTX = 16384
 # means a fresh install with no custom models still has something selectable.
 DEFAULT_MODEL_ID = "jupyternaut/default"
 
+
+def _litellm_chat_models() -> list[str]:
+    """
+    Return the sorted list of chat model IDs known to LiteLLM (the same IDs
+    accepted as ``model=`` by ``litellm.completion``), e.g. ``openai/gpt-4o``,
+    ``anthropic/claude-3-5-haiku-latest``, ``ollama/llama3``.
+
+    LiteLLM's ``model_cost`` map catalogs every model it knows about along with
+    its ``mode``; we keep only the chat models. This is a large list (well over a
+    thousand entries), which is intentional — the model picker exposes the full
+    range of models LiteLLM can talk to, not just a curated subset.
+    """
+    try:
+        import litellm
+    except ImportError:
+        return []
+
+    models = {
+        model_id
+        for model_id, spec in litellm.model_cost.items()
+        if isinstance(spec, dict) and spec.get("mode") == "chat"
+        # `sample_spec` is a documentation placeholder, not a real model.
+        and model_id != "sample_spec"
+    }
+    return sorted(models)
+
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 JUPYTERNAUT_AVATAR_PATH = str(
@@ -107,10 +133,20 @@ class JupyternautPersona(BasePersona):
     # settings view) plus a single built-in "default" entry.
     def _build_model_configuration(self) -> ModelConfiguration:
         """
-        Build the `ModelConfiguration` advertised over awareness: the user's
-        custom models first (so they sort to the top of the picker), followed by
-        a single built-in "default" entry. The default entry is always present
-        so a fresh install with no custom models still has a selectable option.
+        Build the `ModelConfiguration` advertised over awareness. The picker
+        shows, in order:
+
+        1. The user's custom models (defined in the settings view), so they sort
+           to the top.
+        2. A single built-in "default" entry, always present so a fresh install
+           with no custom models still has a selectable option; it resolves to
+           the configured default model at message time.
+        3. Every chat model LiteLLM knows about, so the user can select any
+           supported model directly without first defining a custom model.
+
+        Custom-model IDs are excluded from the LiteLLM list (they are not LiteLLM
+        model IDs), but a custom model's underlying LiteLLM model may still also
+        appear in the list — that's fine, selecting either works.
 
         Jupyternaut advertises no per-message model settings — custom-model
         parameters are defined in the settings view and stored in config, not
@@ -130,6 +166,12 @@ class JupyternautPersona(BasePersona):
                     "models in the Jupyternaut settings view."
                 ),
             )
+        )
+        # The full LiteLLM chat model catalog, so any supported model is
+        # directly selectable.
+        options.extend(
+            ModelOption(id=model_id, name=model_id)
+            for model_id in _litellm_chat_models()
         )
         # `current=None` means "use the persona's default", which resolves to
         # the configured default model at message time.
@@ -179,21 +221,35 @@ class JupyternautPersona(BasePersona):
         - The built-in default entry (`DEFAULT_MODEL_ID`) or `None` resolves to
           the configured default model (`model_provider_id`, seeded from the
           `initial_language_model` traitlet) and its saved `fields` parameters.
-        - A stale/unknown custom ID falls back to the configured default.
+        - A stale custom-model ID (has the ``custom-`` prefix but isn't in
+          config — e.g. the custom model was deleted) falls back to the
+          configured default.
+        - Any other ID is a LiteLLM model ID selected directly from the picker;
+          it is used as-is, with any parameters saved for it under config
+          `fields` (matching how the configured default's params are looked up).
 
-        Returns `(None, {})` when no model can be resolved (no custom model
-        selected and no default configured), which `process_message` surfaces as
-        a prompt to configure a model.
+        Returns `(None, {})` when no model can be resolved (the default was
+        selected but none is configured), which `process_message` surfaces as a
+        prompt to configure a model.
         """
         selected = self.get_model()
         if selected and selected != DEFAULT_MODEL_ID:
             custom_model = self.config_manager.get_custom_model(selected)
             if custom_model is not None:
                 return custom_model.model_id, dict(custom_model.params)
-            # Unknown/stale ID: fall through to the configured default.
+            # A stale custom-model ID (deleted model) falls back to the default;
+            # any other ID is a LiteLLM model picked directly, used as-is with
+            # any parameters saved for it in config.
+            if not selected.startswith("custom-"):
+                params = self._read_config_fields().get(selected, {})
+                return selected, dict(params)
 
         default_model_id = self.config_manager.chat_model
         return default_model_id, dict(self.config_manager.chat_model_args)
+
+    def _read_config_fields(self) -> dict[str, dict[str, Any]]:
+        """Return the per-model parameter dictionaries from config (`fields`)."""
+        return self.config_manager.get_config().fields
 
     async def get_memory_store(self):
         """
