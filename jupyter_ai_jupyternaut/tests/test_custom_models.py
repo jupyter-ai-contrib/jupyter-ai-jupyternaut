@@ -127,7 +127,7 @@ def _persona(cm: ConfigManager, selected):
     return persona
 
 
-def test_model_configuration_lists_custom_then_default(config_path):
+def test_model_configuration_lists_custom_then_catalog(config_path):
     _write_config(config_path, {})
     cm = _manager(config_path)
     m1 = CustomModel(name="Hermes", model_id="openai/hermes")
@@ -135,10 +135,10 @@ def test_model_configuration_lists_custom_then_default(config_path):
 
     mc = _persona(cm, None)._build_model_configuration()
     ids = [o.id for o in mc.options]
-    # Custom model first, then the built-in default, then the LiteLLM catalog.
+    # Custom model first, then the LiteLLM catalog. There is no explicit
+    # "default" option — the picker renders its own built-in "Default" row.
     assert ids[0] == m1.id
-    assert ids[1] == DEFAULT_MODEL_ID
-    assert mc.options[1].name == "Default"
+    assert DEFAULT_MODEL_ID not in ids
     assert mc.current is None
     assert mc.settings == []
 
@@ -221,9 +221,9 @@ def test_model_configuration_includes_full_litellm_catalog(config_path):
 
     mc = _persona(cm, None)._build_model_configuration()
     ids = [o.id for o in mc.options]
-    # Custom model first, then the built-in default, then the LiteLLM catalog.
+    # Custom model first, then the LiteLLM catalog (no explicit default option).
     assert ids[0] == m1.id
-    assert ids[1] == DEFAULT_MODEL_ID
+    assert ids[1] != DEFAULT_MODEL_ID
     assert len(ids) > 1000
     # A representative LiteLLM model is present as a directly-selectable option.
     llm = _litellm_chat_models()

@@ -34,12 +34,13 @@ from .toolkits.code_execution import toolkit as exec_toolkit
 # system prompt
 DEFAULT_OLLAMA_NUM_CTX = 16384
 
-# Stable ID of the single built-in "default" entry in the model picker. It
-# represents Jupyternaut's configured default model (the `model_provider_id`
-# config value, seeded from the `initial_language_model` traitlet). Selecting it
-# resolves to that configured model at message time; if none is configured, the
-# persona asks the user to set one up. Having a stable, always-present option
-# means a fresh install with no custom models still has something selectable.
+# Sentinel model ID meaning "use Jupyternaut's configured default model" (the
+# `model_provider_id` config value, seeded from the `initial_language_model`
+# traitlet). The picker itself has no explicit default option — its built-in
+# "Default" row sends a `None` selection — so this is normally only reached via
+# that `None`. It is still recognized here so an explicit selection of it (e.g.
+# a persona that sets a non-None current) also resolves to the configured
+# default rather than being treated as a literal LiteLLM model ID.
 DEFAULT_MODEL_ID = "jupyternaut/default"
 
 
@@ -138,15 +139,18 @@ class JupyternautPersona(BasePersona):
 
         1. The user's custom models (defined in the settings view), so they sort
            to the top.
-        2. A single built-in "default" entry, always present so a fresh install
-           with no custom models still has a selectable option; it resolves to
-           the configured default model at message time.
-        3. Every chat model LiteLLM knows about, so the user can select any
+        2. Every chat model LiteLLM knows about, so the user can select any
            supported model directly without first defining a custom model.
 
         Custom-model IDs are excluded from the LiteLLM list (they are not LiteLLM
         model IDs), but a custom model's underlying LiteLLM model may still also
         appear in the list — that's fine, selecting either works.
+
+        There is no explicit "default" option: the picker always renders a
+        built-in "Default" row (selection = the persona's current value, which
+        Jupyternaut leaves as `None`), and a `None` selection resolves to the
+        configured default model at message time (see `_resolve_model`). Adding
+        our own default option would just duplicate that row.
 
         Jupyternaut advertises no per-message model settings — custom-model
         parameters are defined in the settings view and stored in config, not
@@ -157,16 +161,6 @@ class JupyternautPersona(BasePersona):
             ModelOption(id=cm.id, name=cm.name, description=cm.description)
             for cm in custom_models
         ]
-        options.append(
-            ModelOption(
-                id=DEFAULT_MODEL_ID,
-                name="Default",
-                description=(
-                    "Jupyternaut's configured default model. Define custom "
-                    "models in the Jupyternaut settings view."
-                ),
-            )
-        )
         # The full LiteLLM chat model catalog, so any supported model is
         # directly selectable.
         options.extend(

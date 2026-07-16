@@ -49,10 +49,10 @@ test.describe('Jupyternaut custom models', () => {
       param: { name: 'temperature', value: '0.5', type: 'number' }
     });
 
-    // The custom model appears in the picker, above the built-in "Default"
-    // option. (The very first row is the "Default (…)" reset choice; the
-    // persona's advertised options follow — custom models first.) Poll, since
-    // the model configuration propagates to the frontend over awareness.
+    // The custom model appears near the top of the picker. (The very first row
+    // is the "Default (…)" reset choice; the persona's advertised options
+    // follow — custom models first, then the LiteLLM catalog.) Poll, since the
+    // model configuration propagates to the frontend over awareness.
     await helpers.waitForModelControl();
     await expect
       .poll(async () => (await helpers.modelOptions()).includes('Fake Model'), {
@@ -61,9 +61,7 @@ test.describe('Jupyternaut custom models', () => {
       .toBe(true);
     const options = await helpers.modelOptions();
     const fakeIdx = options.indexOf('Fake Model');
-    const defaultIdx = options.lastIndexOf('Default');
-    expect(fakeIdx).toBeGreaterThan(0); // after the reset row
-    expect(fakeIdx).toBeLessThan(defaultIdx); // above the built-in Default
+    expect(fakeIdx).toBe(1); // right after the reset row, above the catalog
 
     // Select it, send a message, and get the canned reply.
     await helpers.selectModel('Fake Model');
@@ -88,13 +86,12 @@ test.describe('Jupyternaut custom models', () => {
       })
       .toBe(true);
     let options = await helpers.modelOptions();
-    // Both custom models sort above the built-in "Default", in creation order.
+    // Both custom models sort to the top (after the reset row, before the
+    // catalog), in creation order.
     const aBefore = options.indexOf('Model A');
     const bBefore = options.indexOf('Model B');
-    const defaultIdx = options.lastIndexOf('Default');
-    expect(aBefore).toBeGreaterThan(0);
-    expect(bBefore).toBeGreaterThan(aBefore);
-    expect(defaultIdx).toBeGreaterThan(bBefore);
+    expect(aBefore).toBe(1); // right after the reset row
+    expect(bBefore).toBe(2);
 
     // Reorder: move Model B above Model A in the settings view, then save.
     const view = await helpers.openSettings();
