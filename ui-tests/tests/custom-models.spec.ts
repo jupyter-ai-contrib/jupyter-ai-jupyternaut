@@ -135,4 +135,13 @@ test.describe('Jupyternaut custom models', () => {
     await expect(helpers.settingsButtonVisible).toBeVisible();
     await helpers.expectSettingsButtonRightOfModel();
   });
+
+  test('virtualizes the large model menu', async () => {
+    // The LiteLLM catalog (~2000 models) far exceeds persona-manager's
+    // containment threshold, so the model menu opts into the virtualized path.
+    // A model is still directly selectable from the virtualized menu.
+    await helpers.waitForModelControl();
+    await helpers.expectModelMenuVirtualized();
+    await helpers.expectModelOption('gpt-4o');
+  });
 });

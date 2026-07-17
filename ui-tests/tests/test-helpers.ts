@@ -243,6 +243,19 @@ export class TestHelpers {
     await this.page.keyboard.press('Escape');
   }
 
+  /**
+   * Assert the open model menu opted into the large-list containment path
+   * (persona-manager adds `-virtualized` to the paper when the option count
+   * exceeds its threshold), then close it. With ~2000 LiteLLM models the menu
+   * should always take this path.
+   */
+  async expectModelMenuVirtualized(): Promise<void> {
+    await this.modelControl.click();
+    const virtualizedMenu = this.page.locator(`${MENU_PAPER}-virtualized`);
+    await expect(virtualizedMenu).toBeVisible({ timeout: TIMEOUT });
+    await this.page.keyboard.press('Escape');
+  }
+
   /** The Jupyternaut settings button in the toolbar (visible copy). */
   get settingsButtonVisible(): Locator {
     // The persona controls render a hidden measurement copy of the controls row;
