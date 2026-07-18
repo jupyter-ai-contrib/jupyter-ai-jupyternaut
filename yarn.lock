@@ -9469,15 +9469,15 @@ __metadata:
   linkType: hard
 
 "tar@npm:^7.4.3":
-  version: 7.5.1
-  resolution: "tar@npm:7.5.1"
+  version: 7.5.20
+  resolution: "tar@npm:7.5.20"
   dependencies:
     "@isaacs/fs-minipass": ^4.0.0
     chownr: ^3.0.0
     minipass: ^7.1.2
     minizlib: ^3.1.0
     yallist: ^5.0.0
-  checksum: dbd55d4c3bd9e3c69aed137d9dc9fcb8f86afd103c28d97d52728ca80708f4c84b07e0a01d0bf1c8e820be84d37632325debf19f672a06e0c605c57a03636fd0
+  checksum: 85f0acccee46a1d6e1a1c0f7e03e66f4f7e91debbcd472365e3f398c29447089f99c269cb2552554a0b424f03bba15f94a3de95c4851f13b0be43085f80e58c1
   languageName: node
   linkType: hard
 
@@ -9710,11 +9710,11 @@ __metadata:
 
 "typescript@patch:typescript@~5.8.0#~builtin<compat/typescript>":
   version: 5.8.3
-  resolution: "typescript@patch:typescript@npm%3A5.8.3#~builtin<compat/typescript>::version=5.8.3&hash=85af82"
+  resolution: "typescript@patch:typescript@npm%3A5.8.3#~builtin<compat/typescript>::version=5.8.3&hash=5786d5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 1b503525a88ff0ff5952e95870971c4fb2118c17364d60302c21935dedcd6c37e6a0a692f350892bafcef6f4a16d09073fe461158547978d2f16fbe4cb18581c
+  checksum: f1743b6850976b3debf7cbd53d2bc0b67e75d47eb6410db564c8bb475e92a8a48f8a3fcd14d89cf93426835281c31a8f8a94dad90be4dc899279a898532ba97f
   languageName: node
   linkType: hard
 
