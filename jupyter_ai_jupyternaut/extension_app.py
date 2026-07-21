@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from .config import ConfigManager, ConfigRestAPI
 from .handlers import RouteHandler
 from .jupyternaut import JupyternautPersona
-from .models import ModelParametersRestAPI
+from .models import LiteLLMModelsRestAPI, ModelParametersRestAPI
 from .secrets import EnvSecretsManager, SecretsRestAPI
 
 if TYPE_CHECKING:
@@ -34,6 +34,7 @@ class JupyternautExtension(ExtensionApp):
         (r"api/jupyternaut/get-example/?", RouteHandler),
         (r"api/jupyternaut/config/?", ConfigRestAPI),
         (r"api/jupyternaut/model-parameters/?", ModelParametersRestAPI),
+        (r"api/jupyternaut/litellm-models/?", LiteLLMModelsRestAPI),
         (r"api/jupyternaut/secrets/?", SecretsRestAPI),
     ]
 

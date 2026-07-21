@@ -5,6 +5,8 @@ from jupyter_ai_persona_manager import (
   BasePersona,
   McpServerHttp,
   McpServerStdio,
+  ModelConfiguration,
+  ModelOption,
   PersonaDefaults,
 )
 from jupyter_core.paths import jupyter_data_dir
@@ -32,6 +34,41 @@ from .toolkits.code_execution import toolkit as exec_toolkit
 # system prompt
 DEFAULT_OLLAMA_NUM_CTX = 16384
 
+# Sentinel model ID meaning "use Jupyternaut's configured default model" (the
+# `model_provider_id` config value, seeded from the `initial_language_model`
+# traitlet). The picker itself has no explicit default option — its built-in
+# "Default" row sends a `None` selection — so this is normally only reached via
+# that `None`. It is still recognized here so an explicit selection of it (e.g.
+# a persona that sets a non-None current) also resolves to the configured
+# default rather than being treated as a literal LiteLLM model ID.
+DEFAULT_MODEL_ID = "jupyternaut/default"
+
+
+def _litellm_chat_models() -> list[str]:
+    """
+    Return the sorted list of chat model IDs known to LiteLLM (the same IDs
+    accepted as ``model=`` by ``litellm.completion``), e.g. ``openai/gpt-4o``,
+    ``anthropic/claude-3-5-haiku-latest``, ``ollama/llama3``.
+
+    LiteLLM's ``model_cost`` map catalogs every model it knows about along with
+    its ``mode``; we keep only the chat models. This is a large list (well over a
+    thousand entries), which is intentional — the model picker exposes the full
+    range of models LiteLLM can talk to, not just a curated subset.
+    """
+    try:
+        import litellm
+    except ImportError:
+        return []
+
+    models = {
+        model_id
+        for model_id, spec in litellm.model_cost.items()
+        if isinstance(spec, dict) and spec.get("mode") == "chat"
+        # `sample_spec` is a documentation placeholder, not a real model.
+        and model_id != "sample_spec"
+    }
+    return sorted(models)
+
 MEMORY_STORE_PATH = os.path.join(jupyter_data_dir(), "jupyter_ai", "memory.sqlite")
 
 JUPYTERNAUT_AVATAR_PATH = str(
@@ -40,6 +77,29 @@ JUPYTERNAUT_AVATAR_PATH = str(
     )
 )
 
+def _extract_message_text(message: Any) -> str:
+    """
+    Extract the assistant text from a message object yielded by the agent's
+    streaming events (an ``AIMessage``/``AIMessageChunk``). Handles both a plain
+    string ``content`` and the structured content-block list form (a list of
+    dicts with ``type == "text"``), ignoring tool-call and reasoning blocks.
+
+    Returns an empty string for anything without extractable text.
+    """
+    content = getattr(message, "content", None)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                parts.append(block.get("text", ""))
+            elif isinstance(block, str):
+                parts.append(block)
+        return "".join(parts)
+    return ""
+
+
 class JupyternautPersona(BasePersona):
     """
     The Jupyternaut persona, the main persona provided by Jupyter AI.
@@ -47,6 +107,13 @@ class JupyternautPersona(BasePersona):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Advertise this persona's model options (custom models + the built-in
+        # default) over the awareness channel as soon as the persona is created,
+        # so the model picker is populated without a REST round-trip. Guarded
+        # because the config manager is only bound when the server extension is
+        # installed (see `process_message`).
+        if hasattr(self, "config_manager"):
+            self.sync_model_configuration()
 
     @property
     def defaults(self):
@@ -56,6 +123,127 @@ class JupyternautPersona(BasePersona):
             description="The standard agent provided by JupyterLab. Currently has no tools.",
             system_prompt="...",
         )
+
+    ################################################
+    # persona-manager model API (issue #61)
+    ################################################
+    # Jupyternaut is a LiteLLM/LangChain persona, not an ACP agent, so it has no
+    # long-lived backend session to reconfigure. Instead, the selected model is
+    # resolved fresh for each message in `process_message` (see `_resolve_model`).
+    # The model picker's options are the user's custom models (defined in the
+    # settings view) plus a single built-in "default" entry.
+    def _build_model_configuration(self) -> ModelConfiguration:
+        """
+        Build the `ModelConfiguration` advertised over awareness. The picker
+        shows, in order:
+
+        1. The user's custom models (defined in the settings view), so they sort
+           to the top.
+        2. Every chat model LiteLLM knows about, so the user can select any
+           supported model directly without first defining a custom model.
+
+        Custom-model IDs are excluded from the LiteLLM list (they are not LiteLLM
+        model IDs), but a custom model's underlying LiteLLM model may still also
+        appear in the list — that's fine, selecting either works.
+
+        There is no explicit "default" option: the picker always renders a
+        built-in "Default" row (selection = the persona's current value, which
+        Jupyternaut leaves as `None`), and a `None` selection resolves to the
+        configured default model at message time (see `_resolve_model`). Adding
+        our own default option would just duplicate that row.
+
+        Jupyternaut advertises no per-message model settings — custom-model
+        parameters are defined in the settings view and stored in config, not
+        exposed as picker controls — so `settings` is left empty.
+        """
+        custom_models = self.config_manager.custom_models
+        options = [
+            ModelOption(id=cm.id, name=cm.name, description=cm.description)
+            for cm in custom_models
+        ]
+        # The full LiteLLM chat model catalog, so any supported model is
+        # directly selectable.
+        options.extend(
+            ModelOption(id=model_id, name=model_id)
+            for model_id in _litellm_chat_models()
+        )
+        # `current=None` means "use the persona's default", which resolves to
+        # the configured default model at message time.
+        return ModelConfiguration(current=None, options=options, settings=[])
+
+    def sync_model_configuration(self) -> None:
+        """
+        Rebuild and re-publish the model configuration over awareness. Called on
+        persona creation and whenever the config changes (e.g. the user adds,
+        edits, or reorders custom models in the settings view), so the picker
+        reflects the latest custom models live.
+        """
+        self.report_model_configuration(self._build_model_configuration())
+
+    async def update_model(self, model_id: str) -> None:
+        """
+        Apply a user's model selection. Jupyternaut resolves the concrete
+        LiteLLM model per message (its backend is stateless — a fresh agent is
+        built for each message in `get_agent`), so there is nothing to switch
+        eagerly here: `BasePersona.apply_model_spec` records the new current
+        model on awareness and `process_message` resolves it via
+        `_resolve_model`. An unknown ID (e.g. a stale custom-model ID) is
+        tolerated and falls back to the default at resolution time.
+        """
+
+    async def update_model_settings(self, settings: dict[str, str | None]) -> None:
+        """
+        No-op: Jupyternaut advertises no per-message model settings. Custom-model
+        parameters are edited in the settings view and stored in config, not
+        selected per message, so this is never called with a non-empty mapping.
+        """
+
+    async def update_settings(self, settings: dict[str, str | None]) -> None:
+        """
+        No-op: Jupyternaut advertises no general settings (mode, effort, etc.).
+        """
+
+    def _resolve_model(self) -> tuple[str | None, dict[str, Any]]:
+        """
+        Resolve the persona's current model selection (from awareness, set by
+        the user's per-message selection) into a concrete LiteLLM model ID and
+        its parameters:
+
+        - A custom-model ID resolves to that custom model's LiteLLM model ID and
+          saved parameters (looked up from config by ID — the parameters never
+          travel in message metadata).
+        - The built-in default entry (`DEFAULT_MODEL_ID`) or `None` resolves to
+          the configured default model (`model_provider_id`, seeded from the
+          `initial_language_model` traitlet) and its saved `fields` parameters.
+        - A stale custom-model ID (has the ``custom-`` prefix but isn't in
+          config — e.g. the custom model was deleted) falls back to the
+          configured default.
+        - Any other ID is a LiteLLM model ID selected directly from the picker;
+          it is used as-is, with any parameters saved for it under config
+          `fields` (matching how the configured default's params are looked up).
+
+        Returns `(None, {})` when no model can be resolved (the default was
+        selected but none is configured), which `process_message` surfaces as a
+        prompt to configure a model.
+        """
+        selected = self.get_model()
+        if selected and selected != DEFAULT_MODEL_ID:
+            custom_model = self.config_manager.get_custom_model(selected)
+            if custom_model is not None:
+                return custom_model.model_id, dict(custom_model.params)
+            # A stale custom-model ID (deleted model) falls back to the default;
+            # any other ID is a LiteLLM model picked directly, used as-is with
+            # any parameters saved for it in config.
+            if not selected.startswith("custom-"):
+                params = self._read_config_fields().get(selected, {})
+                return selected, dict(params)
+
+        default_model_id = self.config_manager.chat_model
+        return default_model_id, dict(self.config_manager.chat_model_args)
+
+    def _read_config_fields(self) -> dict[str, dict[str, Any]]:
+        """Return the per-model parameter dictionaries from config (`fields`)."""
+        return self.config_manager.get_config().fields
 
     async def get_memory_store(self):
         """
@@ -164,16 +352,21 @@ class JupyternautPersona(BasePersona):
                 "Please make sure to first install that package in your environment & restart the server.",
             )
             return
-        if not self.config_manager.chat_model:
+        # Resolve the user's per-message model selection (applied to awareness by
+        # `BasePersona.apply_model_spec` before this runs) into a concrete
+        # LiteLLM model ID + params. A custom model resolves to its saved LiteLLM
+        # ID/params; the built-in default resolves to the configured default.
+        model_id, model_args = self._resolve_model()
+        if not model_id:
             self.send_message(
                 "No chat model is configured.\n\n"
-                "You must set one first in the Jupyter AI settings, found in 'Settings > AI Settings' from the menu bar."
+                "Select a custom model from the model picker, or open the "
+                "Jupyternaut settings to define one. A default model can also be "
+                "configured by the server administrator."
             )
             return
 
         try:
-            model_id = self.config_manager.chat_model
-            model_args = self.config_manager.chat_model_args
             system_prompt = self.get_system_prompt(model_id=model_id, message=message)
             agent = await self.get_agent(
                 model_id=model_id, model_args=model_args, system_prompt=system_prompt
@@ -185,6 +378,13 @@ class JupyternautPersona(BasePersona):
             }
 
             async def create_aiter():
+                # Tracks the assistant text already yielded, so we can emit only
+                # the new suffix from each `messages` event. Some
+                # langchain/langgraph versions stream the assistant reply as a
+                # growing snapshot (a full AIMessage per event) rather than
+                # per-token content-block deltas; prefix-diffing turns either
+                # shape into deltas and prevents re-emitting text.
+                emitted = ""
                 stream = await agent.astream_events(
                     {"messages": [{"role": "user", "content": message.body}]},
                     {"configurable": context},
@@ -194,16 +394,32 @@ class JupyternautPersona(BasePersona):
                     if event["method"] != "messages":
                         continue
                     data = event["params"]["data"][0]
-                    if not isinstance(data, dict):
-                        continue
-                    if data.get("event") != "content-block-delta":
+
+                    # Preferred shape: content-block-delta protocol dicts, which
+                    # already carry per-token deltas.
+                    if isinstance(data, dict):
+                        if data.get("event") != "content-block-delta":
+                            continue
+                        block = data.get("delta") or {}
+                        if block.get("type") == "text-delta":
+                            yield block.get("text", "")
+                        elif block.get("type") == "reasoning-delta":
+                            yield block.get('reasoning', '')
                         continue
 
-                    block = data.get("delta") or {}
-                    if block.get("type") == "text-delta":
-                        yield block.get("text", "")
-                    elif block.get("type") == "reasoning-delta":
-                        yield block.get('reasoning', '')
+                    # Fallback shape: the `messages` event carries a message
+                    # object (an `AIMessage`/`AIMessageChunk`) instead of a delta
+                    # dict. Yield only the portion of its text not already
+                    # emitted so the reply still streams to the chat.
+                    text = _extract_message_text(data)
+                    if text and text.startswith(emitted):
+                        yield text[len(emitted):]
+                        emitted = text
+                    elif text:
+                        # Not an extension of what we've emitted (e.g. a genuine
+                        # per-chunk delta rather than a snapshot): emit as-is.
+                        yield text
+                        emitted += text
 
             response_aiter = create_aiter()
             await self.stream_message(response_aiter)

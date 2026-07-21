@@ -10,7 +10,12 @@ from jupyter_core.paths import jupyter_data_dir
 from traitlets import Integer, Unicode
 from traitlets.config import Configurable
 
-from .config_models import DescribeConfigResponse, JaiConfig, UpdateConfigRequest
+from .config_models import (
+    CustomModel,
+    DescribeConfigResponse,
+    JaiConfig,
+    UpdateConfigRequest,
+)
 
 Logger = Union[logging.Logger, logging.LoggerAdapter]
 
@@ -337,7 +342,21 @@ class ConfigManager(Configurable):
                     raise KeyEmptyError("API key value cannot be empty.")
 
         config_dict = self._read_config().model_dump()
-        always_merger.merge(config_dict, config_update.model_dump(exclude_unset=True))
+        update_dict = config_update.model_dump(exclude_unset=True)
+        # `custom_models` is an ordered list the settings UI sends in full on
+        # every save. Two reasons it can't go through `always_merger`:
+        #   1. `always_merger` appends lists rather than replacing them, which
+        #      would duplicate entries and defeat reorder/delete.
+        #   2. `exclude_unset` drops each `CustomModel.id` (it is populated by a
+        #      default_factory, so Pydantic doesn't consider it "set"), which
+        #      would regenerate IDs on every save and break metadata lookups.
+        # So replace the field outright, dumping the models in full to keep IDs.
+        update_dict.pop("custom_models", None)
+        always_merger.merge(config_dict, update_dict)
+        if config_update.custom_models is not None:
+            config_dict["custom_models"] = [
+                model.model_dump() for model in config_update.custom_models
+            ]
         self._write_config(JaiConfig(**config_dict))
 
     # this cannot be a property, as the parent Configurable already defines the
@@ -349,6 +368,25 @@ class ConfigManager(Configurable):
         return DescribeConfigResponse(
             **config_dict, api_keys=api_key_names, last_read=self._last_read
         )
+
+    @property
+    def custom_models(self) -> list[CustomModel]:
+        """
+        Returns the user's custom models, in display order.
+        """
+        return self._read_config().custom_models
+
+    def get_custom_model(self, custom_model_id: str) -> Optional[CustomModel]:
+        """
+        Returns the custom model with the given generated ID, or `None` if no
+        such custom model exists. Used by the persona to look up a custom
+        model's LiteLLM model ID & parameters from the ID carried in message
+        metadata.
+        """
+        for model in self._read_config().custom_models:
+            if model.id == custom_model_id:
+                return model
+        return None
 
     @property
     def chat_model(self) -> str | None:
