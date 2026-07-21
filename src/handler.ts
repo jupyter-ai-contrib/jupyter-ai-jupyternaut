@@ -216,6 +216,17 @@ export namespace AiService {
     return response.chat_models;
   }
 
+  export type ListLiteLLMModelsResponse = {
+    models: string[];
+  };
+
+  export async function listLiteLLMModels(): Promise<string[]> {
+    const response = await requestAPI<ListLiteLLMModelsResponse>(
+      'api/jupyternaut/litellm-models'
+    );
+    return response.models;
+  }
+
   export async function getChatModel(): Promise<string | null> {
     const response = await requestAPI<DescribeConfigResponse>(
       'api/jupyternaut/config/'

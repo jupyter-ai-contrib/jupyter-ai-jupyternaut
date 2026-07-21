@@ -1,1 +1,2 @@
+from .litellm_models_rest_api import LiteLLMModelsRestAPI
 from .parameters_rest_api import ModelParametersRestAPI

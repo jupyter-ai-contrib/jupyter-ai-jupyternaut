@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -17,6 +17,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Save from '@mui/icons-material/Save';
 
 import { AiService } from '../../handler';
+import {
+  SimpleAutocomplete,
+  AutocompleteOption
+} from '../mui-extras/simple-autocomplete';
 import { useStackingAlert } from '../mui-extras/stacking-alert';
 
 const PARAMETER_TYPES = [
@@ -161,15 +165,62 @@ function emptyModel(): EditableModel {
  * Editor for a single custom model: its name, description, LiteLLM model ID, and
  * parameters, plus reorder/delete controls.
  */
+function schemaTypeToParameterType(
+  schemaType: AiService.ParameterSchema['type']
+): ParameterType {
+  // The server schema uses `float`; the editor uses `number`. Everything else
+  // lines up 1:1.
+  return schemaType === 'float' ? 'number' : schemaType;
+}
+
 function CustomModelCard(props: {
   model: EditableModel;
   index: number;
   count: number;
+  litellmModelOptions: AutocompleteOption[];
   onChange: (model: EditableModel) => void;
   onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
 }): JSX.Element {
-  const { model, index, count } = props;
+  const { model, index, count, litellmModelOptions } = props;
+  const [paramSchemas, setParamSchemas] = useState<
+    Record<string, AiService.ParameterSchema>
+  >({});
+
+  // Fetch the parameter names/types LiteLLM supports for this model. Re-fetches
+  // whenever the model ID changes; the trimmed value is what the server accepts.
+  useEffect(() => {
+    let cancelled = false;
+    const modelId = model.modelId.trim();
+    if (!modelId) {
+      setParamSchemas({});
+      return;
+    }
+    AiService.getModelParameters(modelId)
+      .then(response => {
+        if (!cancelled) {
+          setParamSchemas(response.parameters);
+        }
+      })
+      .catch(error => {
+        console.error('Failed to load model parameters:', error);
+        if (!cancelled) {
+          setParamSchemas({});
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [model.modelId]);
+
+  const parameterOptions = useMemo<AutocompleteOption[]>(
+    () =>
+      Object.keys(paramSchemas).map(name => ({
+        label: name,
+        value: name
+      })),
+    [paramSchemas]
+  );
 
   const updateParam = (
     paramIndex: number,
@@ -181,6 +232,26 @@ function CustomModelCard(props: {
       params: model.params.map((param, i) =>
         i === paramIndex ? { ...param, [field]: value } : param
       )
+    });
+  };
+
+  // Set the parameter's name, and — when the name matches a known LiteLLM
+  // parameter — its type in the same update, so the type picker snaps to the
+  // right value without a second render.
+  const setParamName = (paramIndex: number, name: string) => {
+    const schema = paramSchemas[name];
+    props.onChange({
+      ...model,
+      params: model.params.map((param, i) => {
+        if (i !== paramIndex) {
+          return param;
+        }
+        return {
+          ...param,
+          name,
+          type: schema ? schemaTypeToParameterType(schema.type) : param.type
+        };
+      })
     });
   };
 
@@ -242,13 +313,18 @@ function CustomModelCard(props: {
           fullWidth
         />
 
-        <TextField
-          label="Model ID (LiteLLM)"
-          placeholder="e.g. 'openai/hermes'"
+        <SimpleAutocomplete
+          options={litellmModelOptions}
           value={model.modelId}
-          onChange={e => props.onChange({ ...model, modelId: e.target.value })}
-          size="small"
-          fullWidth
+          onChange={value => props.onChange({ ...model, modelId: value })}
+          placeholder="e.g. 'openai/hermes'"
+          maxOptions={100}
+          boldMatches
+          showClearButton
+          textFieldProps={{
+            label: 'Model ID (LiteLLM)',
+            size: 'small'
+          }}
         />
 
         {model.params.map((param, paramIndex) => (
@@ -256,14 +332,20 @@ function CustomModelCard(props: {
             key={paramIndex}
             sx={{ display: 'flex', gap: 1, alignItems: 'center' }}
           >
-            <TextField
-              label="Parameter"
-              placeholder="e.g. 'temperature'"
-              value={param.name}
-              onChange={e => updateParam(paramIndex, 'name', e.target.value)}
-              size="small"
-              sx={{ flex: 1 }}
-            />
+            <Box sx={{ flex: 1 }}>
+              <SimpleAutocomplete
+                options={parameterOptions}
+                value={param.name}
+                onChange={value => setParamName(paramIndex, value)}
+                placeholder="e.g. 'temperature'"
+                boldMatches
+                showClearButton
+                textFieldProps={{
+                  label: 'Parameter',
+                  size: 'small'
+                }}
+              />
+            </Box>
             <Select
               value={param.type}
               onChange={e => updateParam(paramIndex, 'type', e.target.value)}
@@ -325,6 +407,7 @@ function CustomModelCard(props: {
  */
 export function CustomModelsInput(): JSX.Element {
   const [models, setModels] = useState<EditableModel[]>([]);
+  const [litellmModels, setLitellmModels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const alert = useStackingAlert();
@@ -332,8 +415,15 @@ export function CustomModelsInput(): JSX.Element {
   useEffect(() => {
     async function load() {
       try {
-        const custom = await AiService.getCustomModels();
+        const [custom, litellm] = await Promise.all([
+          AiService.getCustomModels(),
+          AiService.listLiteLLMModels().catch(error => {
+            console.error('Failed to load LiteLLM models:', error);
+            return [] as string[];
+          })
+        ]);
         setModels(custom.map(serviceToEditable));
+        setLitellmModels(litellm);
       } catch (error) {
         console.error('Failed to load custom models:', error);
         alert.show('error', 'Failed to load custom models.');
@@ -343,6 +433,11 @@ export function CustomModelsInput(): JSX.Element {
     }
     load();
   }, []);
+
+  const litellmModelOptions = useMemo<AutocompleteOption[]>(
+    () => litellmModels.map(id => ({ label: id, value: id })),
+    [litellmModels]
+  );
 
   const updateModel = (index: number, model: EditableModel) => {
     setModels(prev => prev.map((m, i) => (i === index ? model : m)));
@@ -388,6 +483,13 @@ export function CustomModelsInput(): JSX.Element {
     setSaving(true);
     try {
       await AiService.saveCustomModels(payload);
+      // Re-fetch so freshly-added models pick up their server-assigned IDs.
+      // Without this, a subsequent save resends `id: undefined` for the same
+      // row and the server mints a new ID — orphaning any picker selection
+      // that referenced the previous one (the picker then displays the raw
+      // stale ID, e.g. `custom-f...`, instead of the model's name).
+      const refreshed = await AiService.getCustomModels();
+      setModels(refreshed.map(serviceToEditable));
       alert.show('success', 'Saved custom models.');
     } catch (error) {
       const msg =
@@ -414,6 +516,7 @@ export function CustomModelsInput(): JSX.Element {
           model={model}
           index={index}
           count={models.length}
+          litellmModelOptions={litellmModelOptions}
           onChange={m => updateModel(index, m)}
           onMove={direction => moveModel(index, direction)}
           onDelete={() => deleteModel(index)}
