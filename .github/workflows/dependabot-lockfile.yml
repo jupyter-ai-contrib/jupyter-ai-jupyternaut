@@ -1,0 +1,75 @@
+# Regenerate yarn.lock on Dependabot PRs.
+#
+# Dependabot bumps versions in package.json but does not always update the Yarn
+# Berry lockfile in a way that satisfies the frozen/immutable install that CI
+# runs (`jlpm` in build.yml). When that happens the build fails at install with
+# "the lockfile would have been modified by this install, which is explicitly
+# forbidden". This workflow runs `jlpm install` (mutable outside CI) to bring
+# yarn.lock back in sync, then commits and pushes it to the PR branch.
+#
+# IMPORTANT: the push must NOT use the default GITHUB_TOKEN. Pushes made with
+# GITHUB_TOKEN do not trigger new workflow runs (a recursion guard), so the
+# build check would never re-run against the fixed commit. We push with a
+# GitHub App token instead so CI re-runs and can go green.
+#
+# Setup required (one time, by a repo admin):
+#   1. Create/point to a GitHub App with `contents: write` on this repo.
+#   2. Store its credentials as *Dependabot* secrets (Settings -> Secrets and
+#      variables -> Dependabot), NOT Actions secrets — Dependabot-triggered runs
+#      only see Dependabot secrets:
+#        - DEPENDABOT_APP_ID
+#        - DEPENDABOT_APP_PRIVATE_KEY
+#   If the secrets are absent the token step is skipped and the job no-ops, so
+#   this workflow is safe to merge before the secrets exist.
+name: Dependabot lockfile
+
+on:
+  pull_request:
+    branches: '*'
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    # Only run on Dependabot's own PRs.
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a GitHub App token
+        id: app-token
+        # Skips (empty output) if the secrets aren't configured yet.
+        if: ${{ secrets.DEPENDABOT_APP_ID != '' }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPENDABOT_APP_ID }}
+          private-key: ${{ secrets.DEPENDABOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          # Push with the App token so the resulting commit re-triggers CI.
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+
+      - name: Install JupyterLab (provides jlpm)
+        run: python -m pip install -U "jupyterlab>=4.0.0,<5"
+
+      - name: Regenerate yarn.lock
+        run: jlpm install
+
+      - name: Commit and push if the lockfile changed
+        run: |
+          set -eux
+          if git diff --quiet -- yarn.lock; then
+            echo "yarn.lock already in sync; nothing to do."
+            exit 0
+          fi
+          git config user.name "dependabot[bot]"
+          git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+          git add yarn.lock
+          git commit -m "Update yarn.lock"
+          git push
