@@ -52,11 +52,15 @@ jobs:
     # Only run on Dependabot's own PRs.
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    # The `secrets` context is NOT available in step-level `if:` expressions, so
+    # surface the key through `env` and gate the token step on that instead.
+    env:
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     steps:
       - name: Generate a GitHub App token
         id: app-token
         # Skips (empty output) if the secret isn't configured yet.
-        if: ${{ secrets.APP_PRIVATE_KEY != '' }}
+        if: ${{ env.APP_PRIVATE_KEY != '' }}
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
