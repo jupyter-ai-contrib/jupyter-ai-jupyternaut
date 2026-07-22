@@ -332,11 +332,18 @@ class JupyternautPersona(BasePersona):
         return handle_tool_errors
 
     async def get_agent(self, model_id: str, model_args, system_prompt: str):
+        def is_true_flexible(val: str) -> bool:
+            return val.strip().lower() in ("true", "1", "yes", "y", "t")
+
         if (model_id.startswith("ollama/") or model_id.startswith("ollama_chat/")) \
             and "num_ctx" not in model_args:
                 model_args['num_ctx'] = DEFAULT_OLLAMA_NUM_CTX
         model = ChatLiteLLM(**model_args, model=model_id, streaming=True)
         memory_store = await self.get_memory_store()
+        from langgraph.checkpoint.memory import InMemorySaver
+        memory_store = (await self.get_memory_store()) \
+            if is_true_flexible(model_args.get('persistence', "true")) \
+            else InMemorySaver()
 
         return create_agent(
             model,
@@ -358,6 +365,17 @@ class JupyternautPersona(BasePersona):
         # LiteLLM model ID + params. A custom model resolves to its saved LiteLLM
         # ID/params; the built-in default resolves to the configured default.
         model_id, model_args = self._resolve_model()
+        model_id = (
+            message.metadata or {}
+        ).get(
+            "model_id", model_id
+        )
+        model_args = model_args | (
+            message.metadata or {}
+        ).get(
+            "model_args", {}
+        )
+
         if not model_id:
             self.send_message(
                 "No chat model is configured.\n\n"
