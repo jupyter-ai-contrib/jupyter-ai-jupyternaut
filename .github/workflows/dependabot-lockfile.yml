@@ -12,15 +12,18 @@
 # build check would never re-run against the fixed commit. We push with a
 # GitHub App token instead so CI re-runs and can go green.
 #
-# Setup required (one time, by a repo admin):
-#   1. Create/point to a GitHub App with `contents: write` on this repo.
-#   2. Store its credentials as *Dependabot* secrets (Settings -> Secrets and
-#      variables -> Dependabot), NOT Actions secrets — Dependabot-triggered runs
-#      only see Dependabot secrets:
-#        - DEPENDABOT_APP_ID
-#        - DEPENDABOT_APP_PRIVATE_KEY
-#   If the secrets are absent the token step is skipped and the job no-ops, so
-#   this workflow is safe to merge before the secrets exist.
+# This reuses the same GitHub App as the release workflow (publish-release.yml),
+# which reads `vars.APP_ID` / `secrets.APP_PRIVATE_KEY`. No new App is needed.
+#
+# Setup required (one time, by a repo admin): Dependabot-triggered runs do NOT
+# see Actions secrets/variables — they only see *Dependabot* secrets. So the
+# App's credentials must ALSO be added under Settings -> Secrets and variables
+# -> Dependabot (note: Dependabot has secrets only, no variables, so APP_ID goes
+# there as a secret too):
+#   - APP_ID
+#   - APP_PRIVATE_KEY
+# If they're absent the token step is skipped and the job no-ops, so this
+# workflow is safe to merge before the secrets exist.
 name: Dependabot lockfile
 
 on:
@@ -38,12 +41,12 @@ jobs:
     steps:
       - name: Generate a GitHub App token
         id: app-token
-        # Skips (empty output) if the secrets aren't configured yet.
-        if: ${{ secrets.DEPENDABOT_APP_ID != '' }}
+        # Skips (empty output) if the secret isn't configured yet.
+        if: ${{ secrets.APP_PRIVATE_KEY != '' }}
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.DEPENDABOT_APP_ID }}
-          private-key: ${{ secrets.DEPENDABOT_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
