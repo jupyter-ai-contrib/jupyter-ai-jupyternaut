@@ -5,6 +5,7 @@ import json
 import os
 import re
 from typing import Any, Dict, List, Literal, Optional, Union
+from langchain.tools import tool
 
 import nbformat
 from jupyter_ydoc import YNotebook
@@ -197,6 +198,7 @@ def format_notebook_cell(
     return formatted_cell
 
 
+@tool("jpnaut/read_notebook_cells")
 async def read_notebook_cells(
     notebook_path: str, specific_cell_id: Optional[str] = None
 ) -> List[Dict[str, Any]]:
@@ -307,7 +309,7 @@ async def get_cell_id_from_index(file_path: str, cell_index: int) -> str:
     except Exception:
         raise
 
-
+@tool("jpnaut/add_cell")
 async def add_cell(
     file_path: str,
     content: str | None = None,
@@ -399,7 +401,7 @@ async def add_cell(
     except Exception:
         raise
 
-
+@tool("jpnaut/delete_cell")
 async def delete_cell(file_path: str, cell_id: str):
     """Removes a notebook cell with the specified cell ID.
 
@@ -545,7 +547,7 @@ def set_cursor_in_ynotebook(
         # This is intentional - cursor positioning is a visual enhancement, not critical
         pass
 
-
+@tool("jpnaut/write_to_cell_collaboratively")
 async def write_to_cell_collaboratively(
     ynotebook, ycell, content: str, typing_speed: float = 0.1
 ) -> bool:
@@ -864,6 +866,7 @@ def _safe_set_cursor(
         # Cursor positioning is a visual enhancement, not critical functionality
         pass
 
+@tool("jpnaut/get_open_documents")
 async def get_open_documents(username: Optional[str] = None) -> Optional[List[str]]:
     """
     Returns all open documents for the user, excluding chat files.
@@ -893,6 +896,7 @@ async def get_open_documents(username: Optional[str] = None) -> Optional[List[st
     return None
 
 
+@tool("jpnaut/get_active_notebook")
 async def get_active_notebook(username: Optional[str] = None) -> Optional[str]:
     """
     Returns path for the currently active notebook.
@@ -920,7 +924,7 @@ async def get_active_notebook(username: Optional[str] = None) -> Optional[str]:
             # if only one notebook is open, return it
             if len(notebooks) == 1:
                 return notebooks[0]
-        
+
 def _get_active_cell_id_from_ydoc(ydoc: YNotebook, username: Optional[str] = None) -> Optional[str]:
     """Internal helper: Returns the active cell id from a ydoc instance
 
@@ -946,6 +950,7 @@ def _get_active_cell_id_from_ydoc(ydoc: YNotebook, username: Optional[str] = Non
     return None
 
 
+@tool("jpnaut/get_active_cell_id")
 async def get_active_cell_id(notebook_path: str, username: Optional[str] = None) -> Optional[str]:
     """Returns the active cell id
 
@@ -963,6 +968,7 @@ async def get_active_cell_id(notebook_path: str, username: Optional[str] = None)
     return _get_active_cell_id_from_ydoc(ydoc, username)
 
 
+@tool("jpnaut/select_cell")
 async def select_cell(cell_id: str, username: Optional[str] = None) -> dict:
     """
     Selects a cell in the active notebook by navigating to it using cursor movements.
