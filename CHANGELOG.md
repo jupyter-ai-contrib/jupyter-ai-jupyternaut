@@ -2,6 +2,48 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.1.0b0
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.11...4a38e44e744dbea42c723f2ac8cf0357ac41627b))
+
+### Enhancements made
+
+- Migrate Jupyternaut onto the persona-manager model API [#70](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/70) ([@dlqqq](https://github.com/dlqqq), [@srdas](https://github.com/srdas))
+- use v3 call and output reasoning tags [#58](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/58) ([@joequant](https://github.com/joequant), [@dlqqq](https://github.com/dlqqq))
+- Add support for MCP servers [#50](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/50) ([@brichet](https://github.com/brichet), [@dlqqq](https://github.com/dlqqq))
+
+### Bugs fixed
+
+- add tools to empty list [#90](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/90) ([@joequant](https://github.com/joequant), [@dlqqq](https://github.com/dlqqq))
+- increase default for num_ctx for ollama models [#60](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/60) ([@joequant](https://github.com/joequant), [@dlqqq](https://github.com/dlqqq))
+- Use async shutdown method in JupyternautPersona [#57](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/57) ([@brichet](https://github.com/brichet), [@dlqqq](https://github.com/dlqqq))
+
+### Maintenance and upkeep improvements
+
+- Remove Dependabot lockfile workflow [#92](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/92) ([@dlqqq](https://github.com/dlqqq))
+- Gate lockfile workflow on PR author, not github.actor [#88](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/88) ([@dlqqq](https://github.com/dlqqq))
+- Fix Dependabot lockfile workflow: gate on env, not secrets context [#86](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/86) ([@dlqqq](https://github.com/dlqqq))
+- Auto-regenerate yarn.lock on Dependabot PRs [#84](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/84) ([@dlqqq](https://github.com/dlqqq))
+- Make some dependencies optional [#56](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/56) ([@jtpio](https://github.com/jtpio), [@dlqqq](https://github.com/dlqqq), [@srdas](https://github.com/srdas))
+
+### Other merged PRs
+
+- Bump the npm-security-updates group across 1 directory with 20 updates [#87](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/87) ([@dlqqq](https://github.com/dlqqq))
+- Bump fast-uri from 3.1.3 to 3.1.4 in /ui-tests [#85](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/85) ([@dlqqq](https://github.com/dlqqq))
+- Make Dependabot config security-only [#83](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/83) ([@dlqqq](https://github.com/dlqqq))
+- Group Dependabot npm updates into a single PR [#81](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/81) ([@dlqqq](https://github.com/dlqqq))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-03-24&to=2026-07-22&type=c))
+
+@brichet ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2026-03-24..2026-07-22&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-03-24..2026-07-22&type=Issues)) | @joequant ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Ajoequant+updated%3A2026-03-24..2026-07-22&type=Issues)) | @jtpio ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Ajtpio+updated%3A2026-03-24..2026-07-22&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2026-03-24..2026-07-22&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.0.11
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.10...fafb1c3f1072bfe6b524e6535ca87e705f45da9b))
@@ -22,8 +64,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-03-02&to=2026-03-24&type=c))
 
 @3coins ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3A3coins+updated%3A2026-03-02..2026-03-24&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-03-02..2026-03-24&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.10
 
