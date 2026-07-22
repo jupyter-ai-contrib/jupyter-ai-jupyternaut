@@ -364,6 +364,17 @@ class JupyternautPersona(BasePersona):
         # LiteLLM model ID + params. A custom model resolves to its saved LiteLLM
         # ID/params; the built-in default resolves to the configured default.
         model_id, model_args = self._resolve_model()
+        model_id = (
+            message.metadata or {}
+        ).get(
+            "model_id", model_id
+        )
+        model_args = model_args | (
+            message.metadata or {}
+        ).get(
+            "model_args", {}
+        )
+
         if not model_id:
             self.send_message(
                 "No chat model is configured.\n\n"
