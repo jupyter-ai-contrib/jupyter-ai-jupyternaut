@@ -1,14 +1,23 @@
+# Security-only Dependabot config: no routine version-update PRs, only
+# grouped security updates.
+#
+# `open-pull-requests-limit: 0` disables version-update PRs entirely — this is
+# the documented way to keep security updates while turning off routine bumps.
+# Security updates are driven by Dependabot alerts and run regardless of this
+# limit or the schedule below. See "Overriding the default behavior with a
+# configuration file":
+# https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates#overriding-the-default-behavior-with-a-configuration-file
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    # `schedule.interval` is a required key, but it only governs version
+    # updates — which are disabled below — so its value is inert here.
+    # Security updates are triggered by Dependabot alerts, not this schedule.
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 0
     groups:
-      npm-version-updates:
-        applies-to: version-updates
-        patterns:
-          - "*"
       npm-security-updates:
         applies-to: security-updates
         patterns:
