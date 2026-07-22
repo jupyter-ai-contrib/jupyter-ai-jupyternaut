@@ -55,8 +55,11 @@ permissions:
 
 jobs:
   update-lockfile:
-    # Only run on Dependabot's own PRs.
-    if: github.actor == 'dependabot[bot]'
+    # Only run on Dependabot's own PRs. Gate on the PR AUTHOR, not github.actor:
+    # github.actor is whoever last triggered the run, so a human re-running CI on
+    # a Dependabot PR would make it skip. The PR author is stable regardless of
+    # who kicks the run.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Generate a GitHub App token
