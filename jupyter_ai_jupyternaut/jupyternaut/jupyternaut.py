@@ -280,7 +280,8 @@ class JupyternautPersona(BasePersona):
         return AsyncSqliteSaver(conn)
 
     async def get_tools(self):
-        tools = nb_toolkit
+        tools = []
+        tools += nb_toolkit
         tools += jlab_toolkit
         tools += exec_toolkit
 
