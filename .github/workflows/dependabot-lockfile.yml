@@ -41,7 +41,12 @@ name: Dependabot lockfile
 
 on:
   pull_request:
-    branches: '*'
+    # Only trigger when a lockfile changes. Dependabot PRs always touch one, so
+    # this still fires for them, while human PRs that don't touch a lockfile
+    # never create a run (no stray "skipping" check). `**/yarn.lock` matches
+    # lockfiles in any directory, not just the repo root.
+    paths:
+      - '**/yarn.lock'
 
 # Least privilege: the default job token needs nothing here; all writes go
 # through the scoped App token minted below.
