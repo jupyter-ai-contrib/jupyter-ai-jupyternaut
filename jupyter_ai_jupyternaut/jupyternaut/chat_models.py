@@ -71,6 +71,43 @@ if TYPE_CHECKING:
 class ChatLiteLLMException(Exception):
     """Error with the `LiteLLM I/O` library"""
 
+ 
+def _remove_reasoning_objects(obj):
+    """
+    Recursively remove any dictionary objects where type is set to "reasoning".
+
+    Args:
+        obj: The object to process (dict, list, or other value)
+
+    Returns:
+        The cleaned object with reasoning dicts removed
+    """
+    if isinstance(obj, dict):
+        # Check if this dict has type="reasoning" - remove it entirely
+        if obj.get('type') == 'reasoning':
+            return None
+
+        # Otherwise, recursively process each key-value pair
+        result = {}
+        for key, value in obj.items():
+            processed = _remove_reasoning_objects(value)
+            if processed is not None:
+                result[key] = processed
+        return result
+
+    elif isinstance(obj, list):
+        # Recursively process list items, filtering out None values
+        result = []
+        for item in obj:
+            processed = _remove_reasoning_objects(item)
+            if processed is not None:
+                result.append(processed)
+        return result
+    else:
+        # Return primitive values unchanged
+        return obj
+
+
 
 def _create_retry_decorator(
     llm: ChatLiteLLM,
@@ -443,6 +480,7 @@ class ChatLiteLLM(BaseChatModel):
             return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts = _remove_reasoning_objects(message_dicts)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
