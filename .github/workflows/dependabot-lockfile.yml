@@ -22,8 +22,9 @@
 # there as a secret too):
 #   - APP_ID
 #   - APP_PRIVATE_KEY
-# If they're absent the token step is skipped and the job no-ops, so this
-# workflow is safe to merge before the secrets exist.
+# Until those Dependabot secrets exist, the token step fails and the run goes
+# red on Dependabot PRs — an honest signal that setup is incomplete. This
+# workflow only runs on Dependabot PRs, so it never affects human PRs.
 #
 # Security posture (why the App credential is not meaningfully exposed here):
 #   - The App token is EPHEMERAL — create-github-app-token mints an installation
@@ -40,7 +41,12 @@ name: Dependabot lockfile
 
 on:
   pull_request:
-    branches: '*'
+    # Only trigger when a lockfile changes. Dependabot PRs always touch one, so
+    # this still fires for them, while human PRs that don't touch a lockfile
+    # never create a run (no stray "skipping" check). `**/yarn.lock` matches
+    # lockfiles in any directory, not just the repo root.
+    paths:
+      - '**/yarn.lock'
 
 # Least privilege: the default job token needs nothing here; all writes go
 # through the scoped App token minted below.
@@ -55,8 +61,13 @@ jobs:
     steps:
       - name: Generate a GitHub App token
         id: app-token
-        # Skips (empty output) if the secret isn't configured yet.
-        if: ${{ secrets.APP_PRIVATE_KEY != '' }}
+        # The App private key is referenced ONLY here, in `with:` — never in a
+        # job-level `env`, so it is not exposed to the install step or any other
+        # step. (The `secrets` context is allowed in `with:`; it is NOT allowed
+        # in a step `if:`, which is why there is no secret-presence gate here.)
+        # Requires the APP_ID / APP_PRIVATE_KEY *Dependabot* secrets to be set;
+        # if they are missing this step fails and the run goes red — an honest
+        # "not configured yet" signal rather than a silent skip.
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -70,7 +81,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           # Push with the App token so the resulting commit re-triggers CI.
-          token: ${{ steps.app-token.outputs.token || github.token }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Base Setup
         uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
