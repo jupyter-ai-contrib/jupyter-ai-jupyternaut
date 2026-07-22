@@ -100,7 +100,8 @@
     },
     "resolutions": {
         "@jupyterlab/application": "^4.4.9",
-        "@jupyterlab/docregistry": "^4.4.9"
+        "@jupyterlab/docregistry": "^4.4.9",
+        "webpack": "5.102.0"
     },
     "sideEffects": [
         "style/*.css",
