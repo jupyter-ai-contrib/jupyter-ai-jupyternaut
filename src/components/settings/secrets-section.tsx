@@ -26,18 +26,22 @@ export function SecretsSection(): JSX.Element {
    * `loading` state accordingly.
    */
   const loadSecrets = async () => {
-    try {
-      setLoading(true);
-      const secrets = await AiService.listSecrets();
-      setEditableSecrets(secrets.editable_secrets);
-      setStaticSecrets(secrets.static_secrets);
-      setError(false);
-    } catch (error) {
-      setError(true);
-      errorAlert.show('error', error as unknown as any);
-    } finally {
-      setLoading(false);
-    }
+      try {
+        setLoading(true);
+        const secrets = await AiService.listSecrets();
+        setEditableSecrets(secrets.editable_secrets);
+        setStaticSecrets(secrets.static_secrets);
+        setError(false);
+      } catch (error: any) {
+        setError(true);
+        let errorMessage = error?.message || String(error);
+        if (typeof errorMessage === 'string' && errorMessage.trim().startsWith('<')) {
+          errorMessage = 'Failed to fetch secrets from the Jupyter Server. The backend extension may be unreachable or improperly installed.';
+        }
+        errorAlert.show('error', errorMessage);
+      } finally {
+        setLoading(false);
+      }
   };
 
   /**
@@ -45,15 +49,19 @@ export function SecretsSection(): JSX.Element {
    * state. This prevents the child components from being remounted.
    */
   const reloadSecrets = async () => {
-    try {
-      const secrets = await AiService.listSecrets();
-      setEditableSecrets(secrets.editable_secrets);
-      setStaticSecrets(secrets.static_secrets);
-      setError(false);
-    } catch (error) {
-      setError(true);
-      errorAlert.show('error', error as unknown as any);
-    }
+      try {
+        const secrets = await AiService.listSecrets();
+        setEditableSecrets(secrets.editable_secrets);
+        setStaticSecrets(secrets.static_secrets);
+        setError(false);
+      } catch (error: any) {
+        setError(true);
+        let errorMessage = error?.message || String(error);
+        if (typeof errorMessage === 'string' && errorMessage.trim().startsWith('<')) {
+          errorMessage = 'Failed to fetch secrets from the Jupyter Server. The backend extension may be unreachable or improperly installed.';
+        }
+        errorAlert.show('error', errorMessage);
+      }
   };
 
   /**
