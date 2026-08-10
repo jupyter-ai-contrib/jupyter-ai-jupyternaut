@@ -43,6 +43,7 @@ dependencies = [
     "python_dotenv>=1,<2",
     "jupyter_ai_persona_manager>=0.1.0rc1",
     "langchain>=1.0.0",
+    "langchain-litellm>=0.7.0",
     # Provides the base checkpointer (`InMemorySaver`) used for in-memory
     # conversation memory. Persistent, SQLite-backed memory is available via the
     # optional `persistence` extra.
