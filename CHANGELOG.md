@@ -2,6 +2,37 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.1.0b1
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.1.0b0...9a26d9c393434423e27c0bcec9d2f7249d6c81c1))
+
+### Maintenance and upkeep improvements
+
+- Update langchain-mcp-adapter version [#108](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/108) ([@srdas](https://github.com/srdas))
+- Replaced `litellm` plumbing with `langchain-litellm` in `jupyternaut` [#101](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/101) ([@srdas](https://github.com/srdas), [@dlqqq](https://github.com/dlqqq))
+
+### Other merged PRs
+
+- Bump postcss from 8.5.19 to 8.5.26 in /ui-tests [#107](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/107) ([@srdas](https://github.com/srdas))
+- Bump nanoid from 3.3.16 to 3.3.18 in /ui-tests [#106](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/106) ([@srdas](https://github.com/srdas))
+- Bump dompurify from 3.4.12 to 3.4.13 in /ui-tests [#105](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/105) ([@srdas](https://github.com/srdas))
+- Bump mermaid from 11.16.0 to 11.16.1 in /ui-tests [#104](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/104) ([@srdas](https://github.com/srdas))
+- Bump fast-uri from 3.1.4 to 3.1.5 in /ui-tests [#103](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/103) ([@srdas](https://github.com/srdas))
+- Bump undici from 8.7.0 to 8.10.0 in /ui-tests [#102](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/102) ([@srdas](https://github.com/srdas))
+- Bump tar from 7.5.20 to 7.5.22 in /ui-tests [#100](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/100) ([@srdas](https://github.com/srdas))
+- Bump lodash-es from 4.17.21 to 4.18.1 in the npm-security-updates group across 1 directory [#93](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/93) ([@srdas](https://github.com/srdas))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-07-22&to=2026-08-13&type=c))
+
+@dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-07-22..2026-08-13&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2026-07-22..2026-08-13&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.1.0b0
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.0.11...4a38e44e744dbea42c723f2ac8cf0357ac41627b))
@@ -41,8 +72,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-03-24&to=2026-07-22&type=c))
 
 @brichet ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2026-03-24..2026-07-22&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-03-24..2026-07-22&type=Issues)) | @joequant ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Ajoequant+updated%3A2026-03-24..2026-07-22&type=Issues)) | @jtpio ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Ajtpio+updated%3A2026-03-24..2026-07-22&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2026-03-24..2026-07-22&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.0.11
 
