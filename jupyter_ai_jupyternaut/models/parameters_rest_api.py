@@ -54,6 +54,15 @@ class ModelParametersRestAPI(BaseAPIHandler):
                 parameter_names = common_params
             # always include client parameters
             parameter_names.extend(client_params)
+            # Include Ollama-specific params not returned by get_supported_openai_params
+            is_ollama = provider == "ollama" or (
+                model is not None and (
+                    model.startswith("ollama/") or model.startswith("ollama_chat/")
+                )
+            )
+            if is_ollama:
+                ollama_params = ["num_ctx"]
+                parameter_names.extend(p for p in ollama_params if p not in parameter_names)
             # Filter out excluded params
             parameter_names = [n for n in parameter_names if n not in EXCLUDED_PARAMS]
             
