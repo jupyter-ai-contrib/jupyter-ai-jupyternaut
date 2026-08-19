@@ -287,25 +287,26 @@ class JupyternautPersona(BasePersona):
 
         # Add MCP tools
         mcp_settings = self.get_mcp_settings()
-        connections: dict[str, Connection] = {}
-        for mcp in mcp_settings.mcp_servers:
-            if isinstance(mcp, McpServerHttp):
-                connection: StreamableHttpConnection = {
-                    "transport": mcp.type,
-                    "url": mcp.url,
-                    "headers": mcp.headers
-                }
-                connections[mcp.name] = connection
-            elif isinstance(mcp, McpServerStdio):
-                connection: StdioConnection = {
-                    "transport": "stdio",
-                    "command": mcp.command,
-                    "args": mcp.args,
-                    "env": {var.name: var.value for var in mcp.env}
-                }
-                connections[mcp.name] = connection
-        client = MultiServerMCPClient(connections)
-        tools += await client.get_tools()
+        if (mcp_settings is not None):
+            connections: dict[str, Connection] = {}
+            for mcp in mcp_settings.mcp_servers:
+                if isinstance(mcp, McpServerHttp):
+                    connection: StreamableHttpConnection = {
+                        "transport": mcp.type,
+                        "url": mcp.url,
+                        "headers": mcp.headers
+                    }
+                    connections[mcp.name] = connection
+                elif isinstance(mcp, McpServerStdio):
+                    connection: StdioConnection = {
+                        "transport": "stdio",
+                        "command": mcp.command,
+                        "args": mcp.args,
+                        "env": {var.name: var.value for var in mcp.env}
+                    }
+                    connections[mcp.name] = connection
+            client = MultiServerMCPClient(connections)
+            tools += await client.get_tools()
 
         return tools
 
