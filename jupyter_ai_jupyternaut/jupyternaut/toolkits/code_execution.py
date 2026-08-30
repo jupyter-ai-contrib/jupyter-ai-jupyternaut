@@ -3,8 +3,9 @@
 import asyncio
 import shlex
 from typing import Optional
+from langchain.tools import tool
 
-
+@tool("jpnaut/bash")
 async def bash(command: str, timeout: Optional[int] = None) -> str:
     """Executes a bash command and returns the result
 

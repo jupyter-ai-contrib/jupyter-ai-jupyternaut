@@ -3,8 +3,9 @@ from typing import Optional
 from jupyterlab_commands_toolkit.tools import execute_command
 
 from .utils import get_serverapp
+from langchain.tools import tool
 
-
+@tool("jpnaut/open_file")
 async def open_file(file_path: str):
     """
     Opens a file in JupyterLab main area
@@ -43,13 +44,14 @@ async def open_file(file_path: str):
     return await execute_command("docmanager:open", {"path": file_path})
 
 
+@tool("jpnaut/run_all_cells")
 async def run_all_cells():
     """
     Runs all cells in the currently active Jupyter notebook
     """
     return await execute_command("notebook:run-all-cells")
 
-
+@tool("jpnaut/run_cell")
 async def run_cell(cell_id: str, username: Optional[str] = None) -> dict:
     """
     Runs a specific cell in the active notebook by selecting it and executing it.
@@ -73,13 +75,11 @@ async def run_cell(cell_id: str, username: Optional[str] = None) -> dict:
     # Then run the currently selected cell
     return await execute_command("notebook:run-cell")
 
-
 async def select_cell_below():
     """
     Moves the cursor down to select the cell below the currently selected cell
     """
     return await execute_command("notebook:move-cursor-down")
-
 
 async def select_cell_above():
     """
@@ -87,7 +87,7 @@ async def select_cell_above():
     """
     return await execute_command("notebook:move-cursor-up")
 
-
+@tool("jpnaut/restart_kernel")
 async def restart_kernel():
     """
     Restarts the notebook kernel, useful when new packages are installed
