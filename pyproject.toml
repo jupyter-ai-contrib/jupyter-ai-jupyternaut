@@ -37,11 +37,10 @@ dependencies = [
     "deepmerge>=2.0,<3",
     # NOTE: Make sure to update the corresponding dependency in
     # `packages/jupyter-ai/package.json` to match the version range below
-    "jupyterlab-chat>=0.19.0",
     "jupyter_ai_litellm>=0.0.2",
     "jinja2>=3.0,<4",
     "python_dotenv>=1,<2",
-    "jupyter_ai_persona_manager>=0.1.0rc1",
+    "jupyter_ai_persona_manager>=0.2.0rc0",
     "langchain>=1.0.0",
     "langchain-litellm>=0.7.0",
     # Provides the base checkpointer (`InMemorySaver`) used for in-memory
@@ -49,7 +48,7 @@ dependencies = [
     # optional `persistence` extra.
     "langgraph-checkpoint>=2.1.0",
     "langchain_mcp_adapters>=0.3.2,<0.4",
-    "jupyter_server_documents>=0.1.0a8",
+    "jupyter_server_documents>=0.3",
     "jupyterlab-commands-toolkit>=0.1.2",
     "jupyterlab-notebook-awareness>=0.2.0",
 ]
