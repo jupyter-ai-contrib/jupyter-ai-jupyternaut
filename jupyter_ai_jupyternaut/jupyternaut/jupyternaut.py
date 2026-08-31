@@ -294,7 +294,7 @@ class JupyternautPersona(BasePersona):
                     connection: StreamableHttpConnection = {
                         "transport": mcp.type,
                         "url": mcp.url,
-                        "headers": mcp.headers
+                        "headers": {h.name: h.value for h in mcp.headers}
                     }
                     connections[mcp.name] = connection
                 elif isinstance(mcp, McpServerStdio):
