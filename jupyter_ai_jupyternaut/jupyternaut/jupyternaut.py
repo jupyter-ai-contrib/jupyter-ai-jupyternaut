@@ -375,7 +375,7 @@ class JupyternautPersona(BasePersona):
             )
 
             context = {
-                "thread_id": self.ychat.get_id(),
+                "thread_id": self.chat.get_id(),
                 "username": message.sender
             }
 
