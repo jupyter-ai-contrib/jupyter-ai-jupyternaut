@@ -2,6 +2,39 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.1.0rc0
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.1.0b1...a98ca9a396d0cc30e4b781f34a132dcd3b89c295))
+
+### Enhancements made
+
+- Support Jupyter AI v3.2 [#111](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/111) ([@brichet](https://github.com/brichet), [@dlqqq](https://github.com/dlqqq))
+
+### Bugs fixed
+
+- Fix the tools when mcp servers are not available [#110](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/110) ([@brichet](https://github.com/brichet), [@dlqqq](https://github.com/dlqqq))
+
+### Maintenance and upkeep improvements
+
+- Require Python >=3.11 and `jupyter-ai-litellm>=0.1.0` [#113](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/113) ([@dlqqq](https://github.com/dlqqq))
+
+### Other merged PRs
+
+- Bump the npm-security-updates group across 1 directory with 3 updates [#114](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/114) ([@dlqqq](https://github.com/dlqqq))
+- Bump fast-uri from 3.1.5 to 3.1.7 in /ui-tests [#112](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/112) ([@dlqqq](https://github.com/dlqqq))
+- Bump the npm-security-updates group across 1 directory with 7 updates [#109](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/109) ([@dlqqq](https://github.com/dlqqq))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-08-13&to=2026-09-02&type=c))
+
+@brichet ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2026-08-13..2026-09-02&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-08-13..2026-09-02&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.1.0b1
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.1.0b0...9a26d9c393434423e27c0bcec9d2f7249d6c81c1))
@@ -30,8 +63,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-07-22&to=2026-08-13&type=c))
 
 @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-07-22..2026-08-13&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2026-07-22..2026-08-13&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.1.0b0
 
