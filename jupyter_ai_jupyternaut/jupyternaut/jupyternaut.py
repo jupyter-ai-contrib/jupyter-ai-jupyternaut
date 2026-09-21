@@ -306,7 +306,23 @@ class JupyternautPersona(BasePersona):
                     }
                     connections[mcp.name] = connection
             client = MultiServerMCPClient(connections)
-            tools += await client.get_tools()
+            # Load each server's tools independently. `get_tools()` with no
+            # `server_name` gathers every connection at once and propagates the
+            # first failure (an unreachable HTTP server surfaces as an opaque
+            # `ExceptionGroup: unhandled errors in a TaskGroup`), which would
+            # otherwise abort the whole reply — one down MCP server should not
+            # take Jupyternaut offline. Skip any server we can't reach, log why,
+            # and continue with the tools we could load.
+            for name in connections:
+                try:
+                    tools += await client.get_tools(server_name=name)
+                except Exception:
+                    self.log.warning(
+                        f"Failed to load tools from MCP server '{name}'; "
+                        "skipping it. Jupyternaut will respond without this "
+                        "server's tools.",
+                        exc_info=True,
+                    )
 
         return tools
 
