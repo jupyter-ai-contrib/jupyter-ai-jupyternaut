@@ -2,6 +2,25 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.1.0
+
+([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.1.0rc0...a8258dd22b905427859a3c19679080c0dc048390))
+
+### Bugs fixed
+
+- Fix bug in magics use of jupyternaut persona [#117](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/pull/117) ([@srdas](https://github.com/srdas), [@dlqqq](https://github.com/dlqqq))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-09-02&to=2026-09-21&type=c))
+
+@dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-09-02..2026-09-21&type=Issues)) | @srdas ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Asrdas+updated%3A2026-09-02..2026-09-21&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.1.0rc0
 
 ([Full Changelog](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/compare/v0.1.0b1...a98ca9a396d0cc30e4b781f34a132dcd3b89c295))
@@ -32,8 +51,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/jupyter-ai-contrib/jupyter-ai-jupyternaut/graphs/contributors?from=2026-08-13&to=2026-09-02&type=c))
 
 @brichet ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Abrichet+updated%3A2026-08-13..2026-09-02&type=Issues)) | @dlqqq ([activity](https://github.com/search?q=repo%3Ajupyter-ai-contrib%2Fjupyter-ai-jupyternaut+involves%3Adlqqq+updated%3A2026-08-13..2026-09-02&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.1.0b1
 
